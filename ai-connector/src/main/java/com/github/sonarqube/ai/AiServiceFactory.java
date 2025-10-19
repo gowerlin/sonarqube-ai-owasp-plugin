@@ -6,6 +6,7 @@ import com.github.sonarqube.ai.model.AiConfig;
 import com.github.sonarqube.ai.model.AiExecutionMode;
 import com.github.sonarqube.ai.provider.ClaudeService;
 import com.github.sonarqube.ai.provider.OpenAiService;
+import com.github.sonarqube.ai.provider.copilot.CopilotCliService;
 import com.github.sonarqube.ai.provider.gemini.GeminiApiService;
 import com.github.sonarqube.ai.provider.gemini.GeminiCliService;
 
@@ -75,13 +76,21 @@ public class AiServiceFactory {
             .timeout(config.getTimeoutSeconds())
             .build();
 
-        // 根據模型類型建立對應的 CLI 服務
-        if (config.getModel().isGemini()) {
+        // 根據 CLI 路徑判斷使用哪個 CLI 服務
+        // 因為 CLI 模式下，不同工具對應不同服務
+        String cliPath = config.getCliPath().toLowerCase();
+
+        if (cliPath.contains("gemini")) {
+            return new GeminiCliService(config, executor);
+        } else if (cliPath.contains("gh") || cliPath.contains("copilot")) {
+            return new CopilotCliService(config, executor);
+        } else if (config.getModel().isGemini()) {
+            // 備用：根據模型類型判斷
             return new GeminiCliService(config, executor);
         } else {
             throw new IllegalArgumentException(
-                "Unsupported CLI model: " + config.getModel().getModelId() +
-                ". Currently supported: Gemini CLI"
+                "Unsupported CLI tool: " + config.getCliPath() +
+                ". Currently supported: Gemini CLI (gemini), GitHub Copilot CLI (gh)"
             );
         }
     }
@@ -147,6 +156,27 @@ public class AiServiceFactory {
             .build();
 
         return new GeminiCliService(config, executor);
+    }
+
+    /**
+     * 建立預設的 GitHub Copilot CLI 服務實例
+     *
+     * @param cliPath GitHub CLI (gh) 工具路徑
+     * @return GitHub Copilot CLI 服務實例
+     */
+    public static AiService createCopilotCliService(String cliPath) {
+        AiConfig config = AiConfig.builder()
+            .model(com.github.sonarqube.ai.model.AiModel.GEMINI_1_5_PRO) // 使用通用模型
+            .cliPath(cliPath)
+            .executionMode(AiExecutionMode.CLI)
+            .build();
+
+        CliExecutor executor = ProcessCliExecutor.builder()
+            .cliPath(cliPath)
+            .timeout(60)
+            .build();
+
+        return new CopilotCliService(config, executor);
     }
 
     // 私有建構子，防止實例化
