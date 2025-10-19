@@ -1,6 +1,10 @@
 package com.github.sonarqube.plugin.api;
 
 import com.github.sonarqube.plugin.settings.PdfReportSettings;
+import com.github.sonarqube.report.ReportGenerator;
+import com.github.sonarqube.report.html.HtmlReportGenerator;
+import com.github.sonarqube.report.json.JsonReportGenerator;
+import com.github.sonarqube.report.markdown.MarkdownReportGenerator;
 import com.github.sonarqube.report.model.AnalysisReport;
 import com.github.sonarqube.report.pdf.PdfReportGenerator;
 import org.slf4j.Logger;
@@ -13,14 +17,22 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 /**
- * PDF Report Export API Controller
+ * OWASP Report Export API Controller
  *
- * <p>提供 PDF 報表匯出 API 端點，支援報表格式選擇（Markdown 或 PDF）。</p>
+ * <p>提供多格式報表匯出 API 端點，支援 PDF、HTML、JSON、Markdown 四種格式。</p>
  *
- * <p>API 端點: {@code /api/owasp/report/export?format=pdf&project=<key>}</p>
+ * <p>API 端點: {@code /api/owasp/report/export?format=<format>&project=<key>}</p>
+ *
+ * <p><strong>支援格式：</strong></p>
+ * <ul>
+ *   <li>pdf - 企業級 PDF 報表（iText 7, PDF/A-1b 合規）</li>
+ *   <li>html - 響應式 HTML 報表（含互動式圖表）</li>
+ *   <li>json - 結構化 JSON 報表（API 整合用）</li>
+ *   <li>markdown - Markdown 文字報表（易讀易編輯）</li>
+ * </ul>
  *
  * @author SonarQube AI OWASP Plugin Team
- * @since 2.0.0 (Story 1.6)
+ * @since 2.0.0 (Story 1.6, 5.2, 5.3, 5.5)
  */
 public class PdfReportApiController implements WebService {
 
@@ -33,6 +45,9 @@ public class PdfReportApiController implements WebService {
 
     private final Configuration configuration;
     private final PdfReportGenerator pdfReportGenerator;
+    private final HtmlReportGenerator htmlReportGenerator;
+    private final JsonReportGenerator jsonReportGenerator;
+    private final MarkdownReportGenerator markdownReportGenerator;
 
     /**
      * Constructor
@@ -42,6 +57,9 @@ public class PdfReportApiController implements WebService {
     public PdfReportApiController(Configuration configuration) {
         this.configuration = configuration;
         this.pdfReportGenerator = new PdfReportGenerator();
+        this.htmlReportGenerator = new HtmlReportGenerator();
+        this.jsonReportGenerator = new JsonReportGenerator();
+        this.markdownReportGenerator = new MarkdownReportGenerator();
     }
 
     @Override
@@ -59,9 +77,9 @@ public class PdfReportApiController implements WebService {
 
         // Define parameters
         exportAction.createParam(PARAM_FORMAT)
-                .setDescription("Report format (markdown or pdf)")
+                .setDescription("Report format (pdf, html, json, or markdown)")
                 .setRequired(true)
-                .setPossibleValues("markdown", "pdf")
+                .setPossibleValues("pdf", "html", "json", "markdown")
                 .setExampleValue("pdf");
 
         exportAction.createParam(PARAM_PROJECT)
@@ -87,12 +105,21 @@ public class PdfReportApiController implements WebService {
         LOG.info("Export request received: format={}, project={}", format, projectKey);
 
         try {
-            if ("pdf".equalsIgnoreCase(format)) {
-                exportPdfReport(request, response, projectKey);
-            } else if ("markdown".equalsIgnoreCase(format)) {
-                exportMarkdownReport(request, response, projectKey);
-            } else {
-                throw new IllegalArgumentException("Unsupported format: " + format);
+            switch (format.toLowerCase()) {
+                case "pdf":
+                    exportPdfReport(request, response, projectKey);
+                    break;
+                case "html":
+                    exportHtmlReport(request, response, projectKey);
+                    break;
+                case "json":
+                    exportJsonReport(request, response, projectKey);
+                    break;
+                case "markdown":
+                    exportMarkdownReport(request, response, projectKey);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported format: " + format);
             }
         } catch (Exception e) {
             LOG.error("Failed to export report: format={}, project={}", format, projectKey, e);
@@ -152,6 +179,64 @@ public class PdfReportApiController implements WebService {
     }
 
     /**
+     * Export HTML report
+     *
+     * @param request    Web service request
+     * @param response   Web service response
+     * @param projectKey Project key
+     * @throws IOException If file operations fail
+     */
+    private void exportHtmlReport(Request request, Response response, String projectKey) throws IOException {
+        LOG.info("Generating HTML report for project: {}", projectKey);
+
+        // TODO: Retrieve actual analysis data from SonarQube database
+        AnalysisReport report = createPlaceholderReport(projectKey);
+
+        // Generate HTML
+        String htmlContent = htmlReportGenerator.generate(report);
+
+        // Set response headers
+        String filename = String.format("owasp-security-report-%s.html", projectKey.replace(":", "-"));
+        response.stream().setMediaType("text/html");
+        response.stream().setStatus(200);
+        response.stream().output().write(("Content-Disposition: attachment; filename=\"" + filename + "\"").getBytes());
+
+        // Write HTML content to response
+        response.stream().output().write(htmlContent.getBytes("UTF-8"));
+
+        LOG.info("HTML report sent to client: {} ({} bytes)", filename, htmlContent.length());
+    }
+
+    /**
+     * Export JSON report
+     *
+     * @param request    Web service request
+     * @param response   Web service response
+     * @param projectKey Project key
+     * @throws IOException If file operations fail
+     */
+    private void exportJsonReport(Request request, Response response, String projectKey) throws IOException {
+        LOG.info("Generating JSON report for project: {}", projectKey);
+
+        // TODO: Retrieve actual analysis data from SonarQube database
+        AnalysisReport report = createPlaceholderReport(projectKey);
+
+        // Generate JSON
+        String jsonContent = jsonReportGenerator.generate(report);
+
+        // Set response headers
+        String filename = String.format("owasp-security-report-%s.json", projectKey.replace(":", "-"));
+        response.stream().setMediaType("application/json");
+        response.stream().setStatus(200);
+        response.stream().output().write(("Content-Disposition: attachment; filename=\"" + filename + "\"").getBytes());
+
+        // Write JSON content to response
+        response.stream().output().write(jsonContent.getBytes("UTF-8"));
+
+        LOG.info("JSON report sent to client: {} ({} bytes)", filename, jsonContent.length());
+    }
+
+    /**
      * Export Markdown report
      *
      * @param request    Web service request
@@ -162,10 +247,11 @@ public class PdfReportApiController implements WebService {
     private void exportMarkdownReport(Request request, Response response, String projectKey) throws IOException {
         LOG.info("Generating Markdown report for project: {}", projectKey);
 
-        // TODO: Implement Markdown report generation
-        // Placeholder implementation
-        String markdownContent = String.format("# OWASP Security Analysis Report\n\n**Project**: %s\n\n" +
-                "Markdown report generation not yet implemented.\n", projectKey);
+        // TODO: Retrieve actual analysis data from SonarQube database
+        AnalysisReport report = createPlaceholderReport(projectKey);
+
+        // Generate Markdown
+        String markdownContent = markdownReportGenerator.generate(report);
 
         // Set response headers
         String filename = String.format("owasp-security-report-%s.md", projectKey.replace(":", "-"));
@@ -174,7 +260,7 @@ public class PdfReportApiController implements WebService {
         response.stream().output().write(("Content-Disposition: attachment; filename=\"" + filename + "\"").getBytes());
 
         // Write Markdown content to response
-        response.stream().output().write(markdownContent.getBytes());
+        response.stream().output().write(markdownContent.getBytes("UTF-8"));
 
         LOG.info("Markdown report sent to client: {} ({} bytes)", filename, markdownContent.length());
     }
