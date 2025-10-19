@@ -362,6 +362,89 @@ public final class PdfStyleConstants {
      */
     public static final float SUMMARY_TEXT_SIZE = 12f;
 
+    // ==================== Detailed Findings Styles (Story 1.5) ====================
+
+    /**
+     * 發現標題字型大小：14pt
+     *
+     * <p>用於安全問題標題（編號 + 規則名稱）。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final float FINDING_TITLE_SIZE = 14f;
+
+    /**
+     * 發現內容字型大小：12pt
+     *
+     * <p>用於問題描述、OWASP 分類、CWE ID 等資訊。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final float FINDING_TEXT_SIZE = 12f;
+
+    /**
+     * 代碼片段字型大小：10pt
+     *
+     * <p>用於代碼片段顯示（等寬字體）。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final float CODE_SNIPPET_SIZE = 10f;
+
+    /**
+     * 代碼片段行高：14pt
+     *
+     * <p>固定行高，確保代碼片段的可讀性。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final float CODE_SNIPPET_LEADING = 14f;
+
+    /**
+     * 代碼片段背景顏色：淺灰色 (#F5F5F5)
+     *
+     * <p>用於代碼區塊背景。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final Color CODE_SNIPPET_BACKGROUND = new DeviceRgb(245, 245, 245); // Light Gray
+
+    /**
+     * 修復建議背景顏色：淺黃色 (#FFFBCC)
+     *
+     * <p>用於修復建議區塊背景，提供視覺區分。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final Color FIX_SUGGESTION_BACKGROUND = new DeviceRgb(255, 251, 204); // Light Yellow
+
+    /**
+     * 區塊內邊距：10 像素
+     *
+     * <p>用於代碼片段和修復建議區塊的內邊距。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final float BLOCK_PADDING = 10f;
+
+    /**
+     * 區塊上下間距：10 像素
+     *
+     * <p>用於代碼片段和修復建議區塊的上下外邊距。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final float BLOCK_MARGIN = 10f;
+
+    /**
+     * 發現區塊間距：20 像素
+     *
+     * <p>用於不同安全問題之間的間距。</p>
+     *
+     * @since 2.0.0 (Story 1.5)
+     */
+    public static final float FINDING_SPACING = 20f;
+
     // ==================== Color Theme Support (Future Extension) ====================
 
     /**

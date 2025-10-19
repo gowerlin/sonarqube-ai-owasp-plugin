@@ -12,6 +12,7 @@ import com.itextpdf.kernel.pdf.navigation.PdfExplicitDestination;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Div;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
@@ -122,11 +123,10 @@ public class PdfReportGenerator implements ReportGenerator {
                 // Story 1.4: 建立 OWASP 分類分布長條圖
                 createOwaspCategorySection(document, report);
 
-                // 佔位符內容（Story 1.5 將新增實際內容）
-                document.add(new Paragraph("- Story 1.5: Detailed Findings Section with Code Snippets")
-                        .setMarginTop(50f));
+                // Story 1.5: 建立詳細發現區段
+                createDetailedFindingsSection(document, report);
 
-                LOG.debug("PDF document structure created (Stories 1.1-1.4 complete)");
+                LOG.debug("PDF document structure created (Stories 1.1-1.5 complete)");
             }
 
             LOG.info("PDF report generated successfully: {}", outputPath);
@@ -581,6 +581,243 @@ public class PdfReportGenerator implements ReportGenerator {
         doc.add(new AreaBreak());
 
         LOG.info("OWASP category distribution chart section created successfully");
+    }
+
+    /**
+     * 建立詳細發現區段
+     *
+     * <p><strong>章節內容：</strong></p>
+     * <ul>
+     *   <li>依嚴重性分組（BLOCKER → CRITICAL → MAJOR → MINOR → INFO）</li>
+     *   <li>每個嚴重性分組有獨立的子章節標題（例如「BLOCKER Issues (3)」）</li>
+     *   <li>每個安全問題包含：編號、規則名稱、檔案路徑、OWASP 分類、CWE ID、描述、代碼片段、修復建議</li>
+     *   <li>使用 KeepTogether 防止代碼片段被分頁切斷</li>
+     * </ul>
+     *
+     * @param doc iText Document 物件
+     * @param report 分析報告
+     * @throws IOException 若字型載入失敗
+     * @since 2.0.0 (Story 1.5)
+     */
+    private void createDetailedFindingsSection(Document doc, AnalysisReport report) throws IOException {
+        LOG.info("Creating detailed findings section");
+
+        List<SecurityFinding> findings = report.getFindings();
+        if (findings == null || findings.isEmpty()) {
+            LOG.info("No security findings to display");
+            return;
+        }
+
+        // 依嚴重性分組
+        Map<String, List<SecurityFinding>> groupedBySeverity = findings.stream()
+                .collect(Collectors.groupingBy(SecurityFinding::getSeverity));
+
+        // 依嚴重性順序處理（BLOCKER, CRITICAL, MAJOR, MINOR, INFO）
+        List<String> severityOrder = List.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
+        for (String severity : severityOrder) {
+            List<SecurityFinding> severityFindings = groupedBySeverity.get(severity);
+            if (severityFindings != null && !severityFindings.isEmpty()) {
+                addSeverityGroupSection(doc, severity, severityFindings);
+            }
+        }
+
+        LOG.info("Detailed findings section created successfully ({} findings)", findings.size());
+    }
+
+    /**
+     * 新增嚴重性分組章節
+     *
+     * <p>建立嚴重性分組的章節標題和 PDF 書籤，然後逐一新增該嚴重性的所有發現。</p>
+     *
+     * @param doc iText Document 物件
+     * @param severity 嚴重性等級（BLOCKER, CRITICAL, MAJOR, MINOR, INFO）
+     * @param findings 該嚴重性的發現列表
+     * @throws IOException 若字型載入失敗
+     */
+    private void addSeverityGroupSection(Document doc, String severity, List<SecurityFinding> findings)
+            throws IOException {
+        LOG.debug("Adding {} severity group ({} findings)", severity, findings.size());
+
+        PdfDocument pdfDoc = doc.getPdfDocument();
+
+        // 新增 PDF 書籤（目錄導航）
+        PdfOutline rootOutline = pdfDoc.getOutlines(false);
+        String sectionTitle = String.format("%s Issues (%d)", severity, findings.size());
+        PdfOutline severityOutline = rootOutline.addOutline(sectionTitle);
+        severityOutline.addDestination(PdfExplicitDestination.createFit(pdfDoc.getLastPage()));
+
+        // 章節標題（使用嚴重性顏色）
+        PdfFont titleFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA_BOLD);
+        com.itextpdf.kernel.colors.Color severityColor = getSeverityColorByName(severity);
+
+        Paragraph title = new Paragraph(sectionTitle)
+                .setFont(titleFont)
+                .setFontSize(PdfStyleConstants.SECTION_TITLE_SIZE)
+                .setFontColor(severityColor)
+                .setBold()
+                .setMarginBottom(20f);
+        doc.add(title);
+
+        // 逐一新增發現
+        for (int i = 0; i < findings.size(); i++) {
+            addFinding(doc, findings.get(i), i + 1);
+        }
+
+        // 分頁（進入下一個嚴重性分組）
+        doc.add(new AreaBreak());
+
+        LOG.debug("{} severity group added successfully", severity);
+    }
+
+    /**
+     * 新增單一安全發現
+     *
+     * <p><strong>發現區塊結構：</strong></p>
+     * <ul>
+     *   <li>標題：編號 + 規則名稱（14pt 粗體）</li>
+     *   <li>位置：檔案路徑:行號（等寬字體）</li>
+     *   <li>元資料：OWASP 分類 | CWE ID</li>
+     *   <li>描述：問題描述文字</li>
+     *   <li>代碼片段：淺灰色背景區塊（若有）</li>
+     *   <li>修復建議：淺黃色背景區塊（若有）</li>
+     * </ul>
+     *
+     * <p>使用 KeepTogether 確保代碼片段不被分頁切斷。</p>
+     *
+     * @param doc iText Document 物件
+     * @param finding 安全發現
+     * @param index 編號（從 1 開始）
+     * @throws IOException 若字型載入失敗
+     */
+    private void addFinding(Document doc, SecurityFinding finding, int index) throws IOException {
+        LOG.debug("Adding finding #{}: {}", index, finding.getRuleName());
+
+        PdfFont titleFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA_BOLD);
+        PdfFont textFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA);
+        PdfFont codeFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_COURIER);
+
+        // 建立發現區塊容器（KeepTogether 防止分頁切斷）
+        Div findingBlock = new Div();
+        findingBlock.setKeepTogether(true);
+        findingBlock.setMarginBottom(PdfStyleConstants.FINDING_SPACING);
+
+        // 標題：編號 + 規則名稱
+        Paragraph title = new Paragraph(index + ". " + finding.getRuleName())
+                .setFont(titleFont)
+                .setFontSize(PdfStyleConstants.FINDING_TITLE_SIZE)
+                .setFontColor(PdfStyleConstants.HEADER_TEXT_COLOR)
+                .setBold()
+                .setMarginBottom(5f);
+        findingBlock.add(title);
+
+        // 位置：檔案路徑:行號
+        if (finding.getFilePath() != null) {
+            String location = finding.getFilePath();
+            if (finding.getLineNumber() != null) {
+                location += ":" + finding.getLineNumber();
+            }
+            Paragraph locationPara = new Paragraph(location)
+                    .setFont(codeFont)
+                    .setFontSize(PdfStyleConstants.CODE_SNIPPET_SIZE)
+                    .setFontColor(PdfStyleConstants.BODY_TEXT_COLOR)
+                    .setMarginBottom(5f);
+            findingBlock.add(locationPara);
+        }
+
+        // 元資料：OWASP 分類 | CWE ID
+        StringBuilder metadata = new StringBuilder();
+        if (finding.getOwaspCategory() != null && !finding.getOwaspCategory().isEmpty()) {
+            metadata.append("OWASP: ").append(finding.getOwaspCategory());
+        }
+        if (finding.getCweId() != null && !finding.getCweId().isEmpty()) {
+            if (metadata.length() > 0) {
+                metadata.append(" | ");
+            }
+            metadata.append("CWE: ").append(finding.getCweId());
+        }
+        if (metadata.length() > 0) {
+            Paragraph metadataPara = new Paragraph(metadata.toString())
+                    .setFont(textFont)
+                    .setFontSize(PdfStyleConstants.FINDING_TEXT_SIZE)
+                    .setFontColor(PdfStyleConstants.BODY_TEXT_COLOR)
+                    .setMarginBottom(10f);
+            findingBlock.add(metadataPara);
+        }
+
+        // 描述
+        if (finding.getDescription() != null && !finding.getDescription().isEmpty()) {
+            Paragraph description = new Paragraph(finding.getDescription())
+                    .setFont(textFont)
+                    .setFontSize(PdfStyleConstants.FINDING_TEXT_SIZE)
+                    .setFontColor(PdfStyleConstants.BODY_TEXT_COLOR)
+                    .setMarginBottom(10f);
+            findingBlock.add(description);
+        }
+
+        // 代碼片段（若有）
+        if (finding.getCodeSnippet() != null && !finding.getCodeSnippet().isEmpty()) {
+            Div codeBlock = new Div()
+                    .setBackgroundColor(PdfStyleConstants.CODE_SNIPPET_BACKGROUND)
+                    .setPadding(PdfStyleConstants.BLOCK_PADDING)
+                    .setMarginTop(PdfStyleConstants.BLOCK_MARGIN)
+                    .setMarginBottom(PdfStyleConstants.BLOCK_MARGIN)
+                    .setKeepTogether(true); // 防止代碼片段被切斷
+
+            Paragraph code = new Paragraph(finding.getCodeSnippet())
+                    .setFont(codeFont)
+                    .setFontSize(PdfStyleConstants.CODE_SNIPPET_SIZE)
+                    .setFontColor(PdfStyleConstants.HEADER_TEXT_COLOR)
+                    .setFixedLeading(PdfStyleConstants.CODE_SNIPPET_LEADING); // 固定行高
+
+            codeBlock.add(code);
+            findingBlock.add(codeBlock);
+        }
+
+        // 修復建議（若有）
+        if (finding.getFixSuggestion() != null && !finding.getFixSuggestion().isEmpty()) {
+            Div fixBlock = new Div()
+                    .setBackgroundColor(PdfStyleConstants.FIX_SUGGESTION_BACKGROUND)
+                    .setPadding(PdfStyleConstants.BLOCK_PADDING)
+                    .setMarginTop(PdfStyleConstants.BLOCK_MARGIN)
+                    .setMarginBottom(PdfStyleConstants.BLOCK_MARGIN);
+
+            Paragraph fixTitle = new Paragraph("💡 Fix Suggestion")
+                    .setFont(titleFont)
+                    .setFontSize(PdfStyleConstants.FINDING_TEXT_SIZE)
+                    .setFontColor(PdfStyleConstants.HEADER_TEXT_COLOR)
+                    .setBold()
+                    .setMarginBottom(5f);
+
+            Paragraph fixText = new Paragraph(finding.getFixSuggestion())
+                    .setFont(textFont)
+                    .setFontSize(PdfStyleConstants.FINDING_TEXT_SIZE)
+                    .setFontColor(PdfStyleConstants.BODY_TEXT_COLOR);
+
+            fixBlock.add(fixTitle);
+            fixBlock.add(fixText);
+            findingBlock.add(fixBlock);
+        }
+
+        doc.add(findingBlock);
+
+        LOG.debug("Finding #{} added successfully", index);
+    }
+
+    /**
+     * 根據嚴重性名稱取得對應顏色
+     *
+     * @param severity 嚴重性名稱
+     * @return iText Color 物件
+     */
+    private com.itextpdf.kernel.colors.Color getSeverityColorByName(String severity) {
+        return switch (severity) {
+            case "BLOCKER" -> PdfStyleConstants.SEVERITY_BLOCKER_COLOR;
+            case "CRITICAL" -> PdfStyleConstants.SEVERITY_CRITICAL_COLOR;
+            case "MAJOR" -> PdfStyleConstants.SEVERITY_MAJOR_COLOR;
+            case "MINOR" -> PdfStyleConstants.SEVERITY_MINOR_COLOR;
+            case "INFO" -> PdfStyleConstants.SEVERITY_INFO_COLOR;
+            default -> PdfStyleConstants.HEADER_TEXT_COLOR; // 預設黑色
+        };
     }
 
     /**
