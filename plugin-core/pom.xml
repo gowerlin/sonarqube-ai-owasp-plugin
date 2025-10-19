@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.sonarqube</groupId>
+        <artifactId>sonarqube-ai-owasp-plugin-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>plugin-core</artifactId>
+    <packaging>sonar-plugin</packaging>
+
+    <name>Plugin Core</name>
+    <description>SonarQube 插件核心（插件入口點、規則定義、掃描器、UI 頁面）</description>
+
+    <dependencies>
+        <!-- 內部依賴 - 集成所有模組 -->
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>shared-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>config-manager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>ai-connector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>owasp2017</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>owasp2021</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>owasp2025</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>version-manager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>report-generator</artifactId>
+        </dependency>
+
+        <!-- SonarQube Plugin API -->
+        <dependency>
+            <groupId>org.sonarsource.api.plugin</groupId>
+            <artifactId>sonar-plugin-api</artifactId>
+        </dependency>
+
+        <!-- 日誌框架 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- 測試依賴 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- SonarQube 插件打包 -->
+            <plugin>
+                <groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
+                <artifactId>sonar-packaging-maven-plugin</artifactId>
+                <configuration>
+                    <pluginKey>aiowasp</pluginKey>
+                    <pluginName>AI OWASP Security</pluginName>
+                    <pluginClass>com.github.sonarqube.plugin.AiOwaspPlugin</pluginClass>
+                    <pluginDescription>AI-powered OWASP security analysis with multi-version support (2017, 2021, 2025)</pluginDescription>
+                    <pluginUrl>https://github.com/your-org/sonarqube-ai-owasp-plugin</pluginUrl>
+                    <pluginOrganizationName>Your Organization</pluginOrganizationName>
+                    <pluginOrganizationUrl>https://your-org.com</pluginOrganizationUrl>
+                    <sonarQubeMinVersion>9.9</sonarQubeMinVersion>
+                    <pluginSourcesUrl>https://github.com/your-org/sonarqube-ai-owasp-plugin</pluginSourcesUrl>
+                    <pluginIssueTrackerUrl>https://github.com/your-org/sonarqube-ai-owasp-plugin/issues</pluginIssueTrackerUrl>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.sonarqube</groupId>
+        <artifactId>sonarqube-ai-owasp-plugin-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>rules-engine</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Rules Engine</name>
+    <description>OWASP 規則引擎父模組</description>
+
+    <modules>
+        <module>owasp2017</module>
+        <module>owasp2021</module>
+        <module>owasp2025</module>
+    </modules>
+
+    <dependencies>
+        <!-- 內部依賴 -->
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>shared-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>config-manager</artifactId>
+        </dependency>
+
+        <!-- SonarQube Plugin API -->
+        <dependency>
+            <groupId>org.sonarsource.api.plugin</groupId>
+            <artifactId>sonar-plugin-api</artifactId>
+        </dependency>
+
+        <!-- 日誌框架 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- 測試依賴 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>

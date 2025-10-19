@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 專案基本資訊 -->
+    <groupId>com.github.sonarqube</groupId>
+    <artifactId>sonarqube-ai-owasp-plugin-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>SonarQube AI OWASP Security Plugin</name>
+    <description>AI-powered OWASP security analysis plugin for SonarQube with multi-version support</description>
+    <url>https://github.com/your-org/sonarqube-ai-owasp-plugin</url>
+    <inceptionYear>2025</inceptionYear>
+
+    <!-- 子模組清單 -->
+    <modules>
+        <module>shared-utils</module>
+        <module>config-manager</module>
+        <module>ai-connector</module>
+        <module>rules-engine</module>
+        <module>version-manager</module>
+        <module>report-generator</module>
+        <module>plugin-core</module>
+    </modules>
+
+    <!-- 屬性定義 -->
+    <properties>
+        <!-- 編碼與 Java 版本 -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
+
+        <!-- SonarQube Plugin API -->
+        <sonarqube.version>9.9.0.65466</sonarqube.version>
+        <sonar-plugin-api.version>9.17.0.3660</sonar-plugin-api.version>
+
+        <!-- 第三方程式庫版本 -->
+        <slf4j.version>2.0.9</slf4j.version>
+        <logback.version>1.4.14</logback.version>
+        <jackson.version>2.16.1</jackson.version>
+        <httpclient.version>5.3</httpclient.version>
+        <caffeine.version>3.1.8</caffeine.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <guava.version>33.0.0-jre</guava.version>
+
+        <!-- 測試框架版本 -->
+        <junit.version>5.10.1</junit.version>
+        <mockito.version>5.8.0</mockito.version>
+        <assertj.version>3.25.1</assertj.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
+
+        <!-- Maven 插件版本 -->
+        <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.2.3</maven-surefire-plugin.version>
+        <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
+        <maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
+        <sonar-packaging-maven-plugin.version>1.23.0.740</sonar-packaging-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
+    </properties>
+
+    <!-- 依賴管理 -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- SonarQube Plugin API -->
+            <dependency>
+                <groupId>org.sonarsource.api.plugin</groupId>
+                <artifactId>sonar-plugin-api</artifactId>
+                <version>${sonar-plugin-api.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- 日誌框架 -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+
+            <!-- JSON 處理 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <!-- HTTP 客戶端 -->
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>${httpclient.version}</version>
+            </dependency>
+
+            <!-- 快取框架 -->
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
+            </dependency>
+
+            <!-- 工具程式庫 -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+
+            <!-- 測試框架 -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- 內部模組 -->
+            <dependency>
+                <groupId>com.github.sonarqube</groupId>
+                <artifactId>shared-utils</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.sonarqube</groupId>
+                <artifactId>config-manager</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.sonarqube</groupId>
+                <artifactId>ai-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.sonarqube</groupId>
+                <artifactId>rules-engine</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.sonarqube</groupId>
+                <artifactId>version-manager</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.sonarqube</groupId>
+                <artifactId>report-generator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- 建構配置 -->
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Java 編譯器 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                        <showWarnings>true</showWarnings>
+                        <showDeprecation>true</showDeprecation>
+                    </configuration>
+                </plugin>
+
+                <!-- 單元測試 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <includes>
+                            <include>**/*Test.java</include>
+                            <include>**/*Tests.java</include>
+                        </includes>
+                    </configuration>
+                </plugin>
+
+                <!-- JAR 打包 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                </plugin>
+
+                <!-- SonarQube 插件打包 -->
+                <plugin>
+                    <groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
+                    <artifactId>sonar-packaging-maven-plugin</artifactId>
+                    <version>${sonar-packaging-maven-plugin.version}</version>
+                    <extensions>true</extensions>
+                </plugin>
+
+                <!-- 程式碼覆蓋率 -->
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>check</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <rule>
+                                        <element>BUNDLE</element>
+                                        <limits>
+                                            <limit>
+                                                <counter>LINE</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>0.80</minimum>
+                                            </limit>
+                                        </limits>
+                                    </rule>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <!-- 全域啟用程式碼覆蓋率 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- 開發者資訊 -->
+    <developers>
+        <developer>
+            <id>dev-team</id>
+            <name>Development Team</name>
+            <email>dev@example.com</email>
+            <organization>Your Organization</organization>
+        </developer>
+    </developers>
+
+    <!-- 授權資訊 -->
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <!-- SCM 資訊 -->
+    <scm>
+        <connection>scm:git:git://github.com/your-org/sonarqube-ai-owasp-plugin.git</connection>
+        <developerConnection>scm:git:ssh://github.com:your-org/sonarqube-ai-owasp-plugin.git</developerConnection>
+        <url>https://github.com/your-org/sonarqube-ai-owasp-plugin/tree/main</url>
+    </scm>
+</project>

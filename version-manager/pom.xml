@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.sonarqube</groupId>
+        <artifactId>sonarqube-ai-owasp-plugin-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>version-manager</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Version Manager</name>
+    <description>版本管理模組（OWASP 版本映射、熱載入、版本切換）</description>
+
+    <dependencies>
+        <!-- 內部依賴 -->
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>shared-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>config-manager</artifactId>
+        </dependency>
+
+        <!-- SonarQube Plugin API -->
+        <dependency>
+            <groupId>org.sonarsource.api.plugin</groupId>
+            <artifactId>sonar-plugin-api</artifactId>
+        </dependency>
+
+        <!-- JSON 處理 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- 日誌框架 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- 測試依賴 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>
