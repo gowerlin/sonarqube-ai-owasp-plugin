@@ -1,0 +1,247 @@
+#!/usr/bin/env pwsh
+#Requires -Version 7.0
+
+<#
+.SYNOPSIS
+    快速建置並部署 SonarQube AI OWASP Plugin
+
+.DESCRIPTION
+    此腳本執行以下步驟：
+    1. 使用 Maven Docker 容器建置插件
+    2. 複製插件 JAR 至 SonarQube 插件目錄
+    3. 顯示部署結果和下一步操作建議
+
+.PARAMETER SkipTests
+    跳過單元測試（加快建置速度）
+
+.PARAMETER CleanBuild
+    執行 clean build（移除舊的建構產物）
+
+.PARAMETER Deploy
+    是否自動部署至 SonarQube
+
+.EXAMPLE
+    .\build-and-deploy.ps1
+    完整建置並部署
+
+.EXAMPLE
+    .\build-and-deploy.ps1 -SkipTests
+    跳過測試，快速建置並部署
+
+.EXAMPLE
+    .\build-and-deploy.ps1 -CleanBuild
+    執行 clean build 後部署
+#>
+
+param(
+    [switch]$SkipTests = $true,
+    [switch]$CleanBuild = $true,
+    [switch]$Deploy = $true
+)
+
+# ============================================================
+# 配置參數
+# ============================================================
+$ErrorActionPreference = "Stop"
+$SONARQUBE_PLUGINS_DIR = "E:\sonarqube-community-25.10.0.114319\extensions\plugins"
+$PLUGIN_JAR_PATTERN = "sonar-aiowasp-plugin-*.jar"
+$WORKSPACE_DIR = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$PLUGIN_TARGET_DIR = Join-Path $WORKSPACE_DIR "plugin-core\target"
+
+# ============================================================
+# 輔助函數
+# ============================================================
+function Write-Header {
+    param([string]$Message)
+    Write-Host ""
+    Write-Host "============================================================" -ForegroundColor Cyan
+    Write-Host "  $Message" -ForegroundColor Cyan
+    Write-Host "============================================================" -ForegroundColor Cyan
+    Write-Host ""
+}
+
+function Write-Success {
+    param([string]$Message)
+    Write-Host "✅ $Message" -ForegroundColor Green
+}
+
+function Write-Info {
+    param([string]$Message)
+    Write-Host "ℹ️  $Message" -ForegroundColor Blue
+}
+
+function Write-Warning {
+    param([string]$Message)
+    Write-Host "⚠️  $Message" -ForegroundColor Yellow
+}
+
+function Write-Error {
+    param([string]$Message)
+    Write-Host "❌ $Message" -ForegroundColor Red
+}
+
+function Write-Step {
+    param([string]$Message)
+    Write-Host "📦 $Message" -ForegroundColor Cyan
+}
+
+# ============================================================
+# 主程序
+# ============================================================
+
+Write-Header "SonarQube AI OWASP Plugin - 快速建置與部署"
+
+# 步驟 1: 檢查環境
+Write-Step "步驟 1/4: 檢查環境..."
+
+# 檢查 Docker
+try {
+    $dockerVersion = docker --version
+    Write-Success "Docker 已安裝: $dockerVersion"
+} catch {
+    Write-Error "Docker 未安裝或未啟動，請先安裝 Docker Desktop"
+    exit 1
+}
+
+# 檢查 SonarQube 插件目錄
+if (-not (Test-Path $SONARQUBE_PLUGINS_DIR)) {
+    Write-Warning "SonarQube 插件目錄不存在，將建立目錄"
+    New-Item -ItemType Directory -Path $SONARQUBE_PLUGINS_DIR -Force | Out-Null
+    Write-Success "已建立插件目錄: $SONARQUBE_PLUGINS_DIR"
+} else {
+    Write-Success "SonarQube 插件目錄存在: $SONARQUBE_PLUGINS_DIR"
+}
+
+# 步驟 2: Maven 建置
+Write-Step "步驟 2/4: Maven 建置插件..."
+
+$mavenCommand = "mvn"
+if ($CleanBuild) {
+    $mavenCommand += " clean"
+}
+$mavenCommand += " package"
+if ($SkipTests) {
+    $mavenCommand += " -DskipTests"
+}
+$mavenCommand += " -q"  # Quiet mode
+
+Write-Info "建置指令: $mavenCommand"
+Write-Info "這可能需要幾分鐘時間（首次建置會下載依賴）..."
+
+try {
+    $buildStartTime = Get-Date
+
+    # 使用 Docker Maven 容器建置
+    docker run --rm `
+        -v "${WORKSPACE_DIR}:/workspace" `
+        -w /workspace `
+        maven:3.9-eclipse-temurin-11 `
+        $mavenCommand
+
+    $buildEndTime = Get-Date
+    $buildDuration = ($buildEndTime - $buildStartTime).TotalSeconds
+
+    Write-Success "建置完成！耗時：$([math]::Round($buildDuration, 2)) 秒"
+} catch {
+    Write-Error "Maven 建置失敗"
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    exit 1
+}
+
+# 步驟 3: 查找插件 JAR 檔案
+Write-Step "步驟 3/4: 查找插件 JAR 檔案..."
+
+$pluginJar = Get-ChildItem -Path $PLUGIN_TARGET_DIR -Filter $PLUGIN_JAR_PATTERN -ErrorAction SilentlyContinue |
+             Select-Object -First 1
+
+if (-not $pluginJar) {
+    Write-Error "找不到插件 JAR 檔案"
+    Write-Host "  搜尋路徑: $PLUGIN_TARGET_DIR" -ForegroundColor Yellow
+    Write-Host "  搜尋模式: $PLUGIN_JAR_PATTERN" -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Success "找到插件 JAR: $($pluginJar.Name)"
+Write-Info "檔案大小: $([math]::Round($pluginJar.Length / 1MB, 2)) MB"
+Write-Info "建置時間: $($pluginJar.LastWriteTime)"
+
+# 步驟 4: 部署至 SonarQube
+if ($Deploy) {
+    Write-Step "步驟 4/4: 部署至 SonarQube..."
+
+    try {
+        # 備份舊版本（如果存在）
+        $existingPlugin = Get-ChildItem -Path $SONARQUBE_PLUGINS_DIR -Filter $PLUGIN_JAR_PATTERN -ErrorAction SilentlyContinue
+        if ($existingPlugin) {
+            $backupPath = Join-Path $SONARQUBE_PLUGINS_DIR "backup"
+            if (-not (Test-Path $backupPath)) {
+                New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
+            }
+            $backupFile = Join-Path $backupPath "$($existingPlugin.Name).$(Get-Date -Format 'yyyyMMdd-HHmmss').bak"
+            Move-Item -Path $existingPlugin.FullName -Destination $backupFile -Force
+            Write-Info "已備份舊版本至: $backupFile"
+        }
+
+        # 複製新插件
+        Copy-Item -Path $pluginJar.FullName -Destination $SONARQUBE_PLUGINS_DIR -Force
+        Write-Success "插件已部署至: $SONARQUBE_PLUGINS_DIR"
+
+        # 驗證部署
+        $deployedPlugin = Get-ChildItem -Path $SONARQUBE_PLUGINS_DIR -Filter $PLUGIN_JAR_PATTERN | Select-Object -First 1
+        if ($deployedPlugin) {
+            Write-Success "部署驗證成功"
+            Write-Info "部署檔案: $($deployedPlugin.FullName)"
+        }
+
+    } catch {
+        Write-Error "部署失敗"
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        exit 1
+    }
+} else {
+    Write-Warning "跳過部署步驟（Deploy = false）"
+}
+
+# ============================================================
+# 完成訊息
+# ============================================================
+Write-Header "部署完成"
+
+Write-Success "SonarQube AI OWASP Plugin 已成功建置並部署！"
+Write-Host ""
+
+Write-Host "📋 下一步操作：" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  1. 重啟 SonarQube 以載入新插件" -ForegroundColor White
+Write-Host "     方法一（Docker）：" -ForegroundColor Gray
+Write-Host "       docker-compose restart sonarqube" -ForegroundColor Cyan
+Write-Host "       或使用 VSCode Task: 'Restart SonarQube (Docker)'" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "     方法二（本地 SonarQube）：" -ForegroundColor Gray
+Write-Host "       停止並重啟 SonarQube 服務" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  2. 訪問 SonarQube: http://localhost:9000" -ForegroundColor White
+Write-Host "     預設帳號：admin / admin" -ForegroundColor Gray
+Write-Host ""
+Write-Host "  3. 驗證插件載入" -ForegroundColor White
+Write-Host "     前往：Administration → Marketplace → Installed" -ForegroundColor Gray
+Write-Host "     查找：AI OWASP Security" -ForegroundColor Gray
+Write-Host ""
+Write-Host "  4. 配置 AI API 金鑰" -ForegroundColor White
+Write-Host "     前往：Administration → Configuration → AI Configuration" -ForegroundColor Gray
+Write-Host ""
+
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host "  建置與部署腳本執行完成" -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host ""
+
+# 詢問是否重啟 SonarQube（僅在互動模式下）
+if ($Host.UI.RawUI) {
+    $response = Read-Host "是否立即重啟 SonarQube Docker 容器？(y/N)"
+    if ($response -eq 'y' -or $response -eq 'Y') {
+        Write-Info "重啟 SonarQube..."
+        docker-compose -f (Join-Path $WORKSPACE_DIR "docker-compose.yml") restart sonarqube
+        Write-Success "SonarQube 正在重啟，請稍候 15-30 秒後訪問 http://localhost:9000"
+    }
+}

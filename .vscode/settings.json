@@ -1,3 +1,115 @@
 {
-    "iis.configDir": ""
+    "iis.configDir": "",
+
+    // ============================================================
+    // Java 開發設定
+    // ============================================================
+    "java.project.sourcePaths": [
+        "plugin-core/src/main/java",
+        "ai-connector/src/main/java",
+        "rules-engine/src/main/java",
+        "report-generator/src/main/java",
+        "version-manager/src/main/java",
+        "config-manager/src/main/java",
+        "shared-utils/src/main/java"
+    ],
+    "java.project.outputPath": "target/classes",
+    "java.compile.nullAnalysis.mode": "automatic",
+
+    // ============================================================
+    // 編輯器設定
+    // ============================================================
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.rulers": [120],
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+
+    // ============================================================
+    // Java 格式化設定
+    // ============================================================
+    "[java]": {
+        "editor.defaultFormatter": "redhat.java",
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true
+    },
+
+    // ============================================================
+    // 檔案設定
+    // ============================================================
+    "files.exclude": {
+        "**/.git": true,
+        "**/target": true,
+        "**/.idea": true,
+        "**/*.iml": true
+    },
+    "files.watcherExclude": {
+        "**/target/**": true,
+        "**/.git/objects/**": true
+    },
+    "files.encoding": "utf8",
+    "files.eol": "\n",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+
+    // ============================================================
+    // 終端機設定
+    // ============================================================
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+
+    // ============================================================
+    // 搜尋設定
+    // ============================================================
+    "search.exclude": {
+        "**/target": true,
+        "**/node_modules": true,
+        "**/.git": true
+    },
+
+    // ============================================================
+    // Task Manager 延伸套件設定（篩選顯示）
+    // ============================================================
+    // Task Explorer 延伸套件設定
+    "taskExplorer.exclude": [
+        "node_modules/**",
+        ".vscode-test/**",
+        "**/CMakeFiles/**",
+        "**/go/**",
+        "**/java/**",
+        "**/cmake/**"
+    ],
+    "taskExplorer.enableTaskScanning": true,
+    "taskExplorer.pathToPrograms": {
+        "bash": "bash",
+        "pwsh": "pwsh"
+    },
+
+    // Tasks 延伸套件設定（actboy168）
+    "tasks.exclude": [
+        "**/CMakeFiles/**",
+        "**/go/**",
+        "**/java/**"
+    ],
+
+    // 通用 Task Manager 設定
+    "taskManager.excludeGlobs": [
+        "**/node_modules/**",
+        "**/CMakeFiles/**",
+        "**/go/**",
+        "**/java/**",
+        "**/cmake/**",
+        "**/.vscode-test/**"
+    ],
+    "taskManager.includeGlobs": [
+        "**/Security_Plugin_for_SonarQube/.vscode/tasks.json"
+    ],
+
+    // VSCode 內建任務設定
+    "task.autoDetect": "off",
+    "task.quickOpen.skip": false,
+    "task.problemMatchers.neverPrompt": false
 }

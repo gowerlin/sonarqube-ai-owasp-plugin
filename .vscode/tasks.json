@@ -1,0 +1,212 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // ============================================================
+        // 快速建置與部署任務（主要使用）
+        // ============================================================
+        {
+            "label": "🚀 Build & Deploy to SonarQube",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-File",
+                "${workspaceFolder}/.vscode/scripts/build-and-deploy.ps1"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "echo": true,
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": [
+                "$maven"
+            ]
+        },
+        {
+            "label": "🔨 Quick Build (No Tests)",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "Write-Host '📦 快速建置（跳過測試）...' -ForegroundColor Cyan; docker run --rm -v ${workspaceFolder}:/workspace -w /workspace maven:3.9-eclipse-temurin-11 mvn clean package -DskipTests -q"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": [
+                "$maven"
+            ]
+        },
+        {
+            "label": "📦 Deploy Plugin Only",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "$pluginJar = Get-ChildItem -Path '${workspaceFolder}/plugin-core/target' -Filter 'sonar-aiowasp-plugin-*.jar' | Select-Object -First 1; if ($pluginJar) { Write-Host '📥 複製插件至 SonarQube...' -ForegroundColor Green; Copy-Item -Path $pluginJar.FullName -Destination 'E:/sonarqube-community-25.10.0.114319/extensions/plugins/' -Force; Write-Host '✅ 部署完成！' -ForegroundColor Green; Write-Host '⚠️  請重啟 SonarQube 以載入插件' -ForegroundColor Yellow } else { Write-Host '❌ 找不到插件 JAR 檔案' -ForegroundColor Red }"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": []
+        },
+        // ============================================================
+        // SonarQube 管理任務
+        // ============================================================
+        {
+            "label": "🚀 Start SonarQube",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "Write-Host '🚀 啟動 SonarQube 開發環境...' -ForegroundColor Cyan; docker-compose up -d; Start-Sleep -Seconds 5; Write-Host '✅ SonarQube 正在啟動，請訪問 http://localhost:9000' -ForegroundColor Green; Write-Host '   預設帳號：admin / admin' -ForegroundColor Yellow"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🛑 Stop SonarQube",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "Write-Host '🛑 停止 SonarQube...' -ForegroundColor Yellow; docker-compose down; Write-Host '✅ SonarQube 已停止' -ForegroundColor Green"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔄 Restart SonarQube",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "Write-Host '🔄 重啟 SonarQube...' -ForegroundColor Cyan; docker-compose restart sonarqube; Start-Sleep -Seconds 10; Write-Host '✅ SonarQube 已重啟' -ForegroundColor Green"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📋 View Logs",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "docker-compose logs -f sonarqube"
+            ],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "echo": true
+            },
+            "problemMatcher": []
+        },
+        // ============================================================
+        // 測試與品質檢查
+        // ============================================================
+        {
+            "label": "🧪 Run Tests",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "docker run --rm -v ${workspaceFolder}:/workspace -w /workspace maven:3.9-eclipse-temurin-11 mvn test"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": [
+                "$maven"
+            ]
+        },
+        {
+            "label": "📊 Coverage Report",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "docker run --rm -v ${workspaceFolder}:/workspace -w /workspace maven:3.9-eclipse-temurin-11 mvn jacoco:report; Start-Process '${workspaceFolder}/target/site/jacoco/index.html'"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": []
+        },
+        // ============================================================
+        // 工具任務
+        // ============================================================
+        {
+            "label": "🧹 Clean All",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "Write-Host '🧹 清理所有建構產物...' -ForegroundColor Yellow; docker run --rm -v ${workspaceFolder}:/workspace -w /workspace maven:3.9-eclipse-temurin-11 mvn clean; Write-Host '✅ 清理完成' -ForegroundColor Green"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🗑️ Clean Old Plugins",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-File",
+                "${workspaceFolder}/.vscode/scripts/clean-plugins.ps1"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔍 Check Environment",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "Write-Host '🔍 檢查開發環境...' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Docker 版本：' -ForegroundColor Yellow; docker --version; Write-Host ''; Write-Host 'Docker Compose 版本：' -ForegroundColor Yellow; docker-compose --version; Write-Host ''; Write-Host 'PowerShell 版本：' -ForegroundColor Yellow; $PSVersionTable.PSVersion; Write-Host ''; Write-Host '✅ 環境檢查完成' -ForegroundColor Green"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "echo": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+[
+    // ============================================================
+    // SonarQube Plugin 開發快捷鍵
+    // ============================================================
+    {
+        "key": "ctrl+shift+b",
+        "command": "workbench.action.tasks.runTask",
+        "args": "🚀 Build & Deploy to SonarQube",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+t",
+        "command": "workbench.action.tasks.runTask",
+        "args": "🧪 Run Tests",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+p ctrl+shift+d",
+        "command": "workbench.action.tasks.runTask",
+        "args": "📦 Deploy Plugin Only",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+p ctrl+shift+s",
+        "command": "workbench.action.tasks.runTask",
+        "args": "🚀 Start SonarQube",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+p ctrl+shift+r",
+        "command": "workbench.action.tasks.runTask",
+        "args": "🔄 Restart SonarQube",
+        "when": "editorTextFocus"
+    }
+]
