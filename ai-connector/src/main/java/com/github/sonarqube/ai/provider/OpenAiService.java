@@ -3,17 +3,20 @@ package com.github.sonarqube.ai.provider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.sonarqube.ai.AiException;
 import com.github.sonarqube.ai.AiService;
+import com.github.sonarqube.ai.analyzer.AiResponseParser;
 import com.github.sonarqube.ai.cache.AiCacheManager;
 import com.github.sonarqube.ai.model.AiConfig;
 import com.github.sonarqube.ai.model.AiRequest;
 import com.github.sonarqube.ai.model.AiResponse;
 import com.github.sonarqube.ai.model.PromptTemplate;
+import com.github.sonarqube.ai.model.SecurityIssue;
 import com.github.sonarqube.ai.provider.openai.OpenAiApiRequest;
 import com.github.sonarqube.ai.provider.openai.OpenAiApiResponse;
 import okhttp3.*;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,6 +37,7 @@ public class OpenAiService implements AiService {
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final AiCacheManager cacheManager;
+    private final AiResponseParser responseParser;
 
     public OpenAiService(AiConfig config) {
         this(config, null);
@@ -50,6 +54,7 @@ public class OpenAiService implements AiService {
         this.objectMapper = new ObjectMapper();
         this.httpClient = createHttpClient();
         this.cacheManager = cacheManager;
+        this.responseParser = new AiResponseParser();
     }
 
     /**
@@ -222,10 +227,12 @@ public class OpenAiService implements AiService {
         String content = apiResponse.getChoices().get(0).getMessage().getContent();
         int tokensUsed = apiResponse.getUsage() != null ? apiResponse.getUsage().getTotalTokens() : 0;
 
-        // TODO: Story 2.5 - 解析 JSON 格式的安全問題
-        // 目前先返回原始內容
+        // 解析 JSON 格式的安全問題
+        List<SecurityIssue> issues = responseParser.parseSecurityIssues(content);
+
         return AiResponse.success()
             .analysisResult(content)
+            .issues(issues)
             .processingTimeMs(processingTimeMs)
             .tokensUsed(tokensUsed)
             .modelUsed(apiResponse.getModel())
