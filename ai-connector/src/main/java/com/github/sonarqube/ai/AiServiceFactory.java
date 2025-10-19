@@ -3,6 +3,7 @@ package com.github.sonarqube.ai;
 import com.github.sonarqube.ai.model.AiConfig;
 import com.github.sonarqube.ai.provider.ClaudeService;
 import com.github.sonarqube.ai.provider.OpenAiService;
+import com.github.sonarqube.ai.provider.gemini.GeminiApiService;
 
 /**
  * AI 服務工廠
@@ -31,6 +32,8 @@ public class AiServiceFactory {
             return new OpenAiService(config);
         } else if (config.getModel().isClaude()) {
             return new ClaudeService(config);
+        } else if (config.getModel().isGemini()) {
+            return new GeminiApiService(config);
         } else {
             throw new IllegalArgumentException(
                 "Unsupported AI model: " + config.getModel().getModelId()
@@ -64,6 +67,20 @@ public class AiServiceFactory {
             .apiKey(apiKey)
             .build();
         return new ClaudeService(config);
+    }
+
+    /**
+     * 建立預設的 Gemini 服務實例
+     *
+     * @param apiKey Google Gemini API 金鑰
+     * @return Gemini 服務實例
+     */
+    public static AiService createGeminiService(String apiKey) {
+        AiConfig config = AiConfig.builder()
+            .model(com.github.sonarqube.ai.model.AiModel.GEMINI_1_5_PRO)
+            .apiKey(apiKey)
+            .build();
+        return new GeminiApiService(config);
     }
 
     // 私有建構子，防止實例化

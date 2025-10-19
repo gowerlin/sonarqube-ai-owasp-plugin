@@ -26,7 +26,13 @@ public enum AiModel {
     CLAUDE_3_SONNET("claude-3-sonnet-20240229", "Anthropic", 4096, 200000),
 
     /** Anthropic Claude 3 Haiku 模型 */
-    CLAUDE_3_HAIKU("claude-3-haiku-20240307", "Anthropic", 4096, 200000);
+    CLAUDE_3_HAIKU("claude-3-haiku-20240307", "Anthropic", 4096, 200000),
+
+    /** Google Gemini 1.5 Pro 模型 */
+    GEMINI_1_5_PRO("gemini-1.5-pro", "Google", 8192, 1000000),
+
+    /** Google Gemini 1.5 Flash 模型 */
+    GEMINI_1_5_FLASH("gemini-1.5-flash", "Google", 8192, 1000000);
 
     private final String modelId;
     private final String provider;
@@ -107,5 +113,14 @@ public enum AiModel {
      */
     public boolean isClaude() {
         return "Anthropic".equals(provider);
+    }
+
+    /**
+     * 檢查是否為 Gemini 模型
+     *
+     * @return true 如果是 Gemini 模型
+     */
+    public boolean isGemini() {
+        return "Google".equals(provider);
     }
 }
