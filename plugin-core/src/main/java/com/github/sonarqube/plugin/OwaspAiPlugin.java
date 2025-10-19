@@ -1,5 +1,7 @@
 package com.github.sonarqube.plugin;
 
+import com.github.sonarqube.plugin.api.PdfReportApiController;
+import com.github.sonarqube.plugin.settings.PdfReportSettings;
 import org.sonar.api.Plugin;
 
 /**
@@ -27,6 +29,12 @@ public class OwaspAiPlugin implements Plugin {
             // 掃描感測器
             OwaspSensor.class
         );
+
+        // Story 1.6: 註冊 PDF 報表設定屬性定義
+        context.addExtensions(PdfReportSettings.getPropertyDefinitions());
+
+        // Story 1.6: 註冊 PDF 報表匯出 API 控制器
+        context.addExtension(PdfReportApiController.class);
     }
 
     /**
