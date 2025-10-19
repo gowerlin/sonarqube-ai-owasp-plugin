@@ -35,6 +35,11 @@ public class AiOwaspPlugin implements Plugin {
     public static final String PROPERTY_AI_MAX_TOKENS = "sonar.aiowasp.ai.maxTokens";
     public static final String PROPERTY_AI_TIMEOUT = "sonar.aiowasp.ai.timeout";
 
+    // CLI 模式配置 (Epic 9)
+    public static final String PROPERTY_CLI_GEMINI_PATH = "sonar.aiowasp.cli.gemini.path";
+    public static final String PROPERTY_CLI_COPILOT_PATH = "sonar.aiowasp.cli.copilot.path";
+    public static final String PROPERTY_CLI_CLAUDE_PATH = "sonar.aiowasp.cli.claude.path";
+
     // OWASP 版本配置
     public static final String PROPERTY_OWASP_2017_ENABLED = "sonar.aiowasp.version.2017.enabled";
     public static final String PROPERTY_OWASP_2021_ENABLED = "sonar.aiowasp.version.2021.enabled";
@@ -77,10 +82,12 @@ public class AiOwaspPlugin implements Plugin {
         context.addExtension(
             PropertyDefinition.builder(PROPERTY_AI_PROVIDER)
                 .name("AI Provider")
-                .description("AI 模型供應商 (openai, anthropic)")
+                .description("AI 模型供應商")
                 .category(CATEGORY_AI)
                 .subCategory("Model Selection")
                 .defaultValue("openai")
+                .options("openai", "anthropic", "gemini-api", "gemini-cli", "copilot-cli", "claude-cli")
+                .type(PropertyDefinition.Type.SINGLE_SELECT_LIST)
                 .index(1)
                 .build()
         );
@@ -99,10 +106,14 @@ public class AiOwaspPlugin implements Plugin {
         context.addExtension(
             PropertyDefinition.builder(PROPERTY_AI_MODEL)
                 .name("AI Model")
-                .description("使用的 AI 模型名稱 (gpt-4, claude-3-opus)")
+                .description("使用的 AI 模型名稱 (gpt-4, claude-3-opus, gemini-1.5-pro)")
                 .category(CATEGORY_AI)
                 .subCategory("Model Selection")
                 .defaultValue("gpt-4")
+                .options("gpt-4", "gpt-4-turbo", "gpt-3.5-turbo",
+                         "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307",
+                         "gemini-1.5-pro", "gemini-1.5-flash")
+                .type(PropertyDefinition.Type.SINGLE_SELECT_LIST)
                 .index(3)
                 .build()
         );
@@ -140,6 +151,42 @@ public class AiOwaspPlugin implements Plugin {
                 .defaultValue("60")
                 .type(PropertyDefinition.Type.INTEGER)
                 .index(6)
+                .build()
+        );
+
+        // ============================================================
+        // CLI 模式配置 (Epic 9)
+        // ============================================================
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_CLI_GEMINI_PATH)
+                .name("Gemini CLI Path")
+                .description("Gemini CLI 工具路徑（僅在使用 gemini-cli 時需要）")
+                .category(CATEGORY_AI)
+                .subCategory("CLI Configuration")
+                .defaultValue("/usr/local/bin/gemini")
+                .index(7)
+                .build()
+        );
+
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_CLI_COPILOT_PATH)
+                .name("GitHub Copilot CLI Path")
+                .description("GitHub Copilot CLI 路徑（僅在使用 copilot-cli 時需要）")
+                .category(CATEGORY_AI)
+                .subCategory("CLI Configuration")
+                .defaultValue("/usr/local/bin/gh")
+                .index(8)
+                .build()
+        );
+
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_CLI_CLAUDE_PATH)
+                .name("Claude CLI Path")
+                .description("Claude CLI 工具路徑（僅在使用 claude-cli 時需要）")
+                .category(CATEGORY_AI)
+                .subCategory("CLI Configuration")
+                .defaultValue("/usr/local/bin/claude")
+                .index(9)
                 .build()
         );
 
@@ -244,6 +291,6 @@ public class AiOwaspPlugin implements Plugin {
                 .build()
         );
 
-        LOG.debug("已註冊 {} 個配置屬性", 14);
+        LOG.debug("已註冊 {} 個配置屬性", 17);
     }
 }

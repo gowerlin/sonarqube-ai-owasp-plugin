@@ -12,7 +12,10 @@
 ## ✨ 核心功能
 
 ### 🤖 AI 智能分析
-- **OpenAI GPT-4** 和 **Anthropic Claude** 整合
+- **多 AI Provider 支援** ✨**NEW (v2.1.0 - Epic 9)**：
+  - **API 模式**: OpenAI GPT-4, Anthropic Claude, **Google Gemini**
+  - **CLI 模式**: Gemini CLI, GitHub Copilot CLI, Claude CLI (準備中)
+  - 降低供應商依賴風險，成本優化彈性
 - 理解代碼語義，減少 **40-60% 誤報率**
 - 智能修復建議包含：
   - 詳細描述與修復步驟
@@ -118,16 +121,44 @@ cp plugin-core/target/sonar-aiowasp-plugin-*.jar $SONARQUBE_HOME/extensions/plug
 $SONARQUBE_HOME/bin/linux-x86-64/sonar.sh restart
 ```
 
-### 2. 配置 AI API 金鑰
+### 2. 配置 AI Provider ✨**NEW (v2.1.0 - Epic 9)**
 
 登入 SonarQube 後，前往 **Administration → Configuration → AI Configuration**：
 
-1. **選擇 AI 供應商**：OpenAI 或 Anthropic Claude
-2. **輸入 API 金鑰**：加密存儲，安全無虞
-3. **調整參數**（可選）：
-   - Temperature: 0.3（預設，較確定性）
-   - Max Tokens: 2000
+#### 支援的 AI Provider
+
+**API 模式** (需要 API Key):
+- **OpenAI GPT-4**: `openai` → 模型：gpt-4, gpt-4-turbo, gpt-3.5-turbo
+- **Anthropic Claude**: `anthropic` → 模型：claude-3-opus, claude-3-sonnet, claude-3-haiku
+- **Google Gemini API**: `gemini-api` → 模型：gemini-1.5-pro, gemini-1.5-flash (1M token context!)
+
+**CLI 模式** (需要本地安裝工具):
+- **Gemini CLI**: `gemini-cli` → 工具路徑：`/usr/local/bin/gemini` (預設)
+- **GitHub Copilot CLI**: `copilot-cli` → 工具路徑：`/usr/local/bin/gh` (預設)
+- **Claude Code CLI**: `claude-cli` → 工具路徑：`/usr/local/bin/claude` (預設，準備中)
+
+#### 配置步驟
+
+**API 模式範例**（Google Gemini API）:
+1. **選擇 AI Provider**: 下拉選單選擇 `gemini-api`
+2. **輸入 API Key**: 從 [Google AI Studio](https://ai.google.dev/gemini-api/docs?hl=zh-tw) 取得 API 金鑰（加密存儲）
+3. **選擇 AI Model**: 下拉選單選擇 `gemini-1.5-pro` 或 `gemini-1.5-flash`
+4. **調整參數**（可選）:
+   - Temperature: 0.3（預設，較確定性輸出）
+   - Max Tokens: 2000（Gemini 支援最高 8192）
    - Timeout: 60 秒
+
+**CLI 模式範例**（Gemini CLI）:
+1. **安裝 Gemini CLI 工具**: 參照 [gemini-cli GitHub](https://github.com/google-gemini/gemini-cli)
+2. **選擇 AI Provider**: 下拉選單選擇 `gemini-cli`
+3. **設定工具路徑**: `/usr/local/bin/gemini` 或您的實際安裝路徑
+4. **調整參數**: 同 API 模式
+
+#### 配置優勢
+
+- **降低供應商依賴**: 6 種 Provider 自由切換，避免單一供應商風險
+- **成本優化**: Gemini Flash 模型成本更低，適合大量掃描
+- **離線場景**: CLI 模式可在內網環境使用（無需外部 API 呼叫）
 
 ### 3. 啟用 OWASP 版本
 

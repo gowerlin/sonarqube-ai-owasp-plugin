@@ -16,6 +16,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Epic 5: Story 5.4 多版本對照報告（規劃中）
 - Epic 5: Story 5.6 報告查看 UI（規劃中）
 
+### ✨ Added - Epic 9: 多 AI Provider 整合 (部分完成)
+
+#### Epic 9: Multi-AI Provider Integration ✨**NEW (v2.1.0)** 🚧 (進行中)
+- **Story 9.1: 統一架構設計** ✅
+  - `AiExecutionMode` 列舉：雙模式執行架構（API/CLI）
+  - `CliExecutor` 介面：CLI 工具執行抽象
+  - `CliExecutionException` 例外類別：詳細錯誤上下文
+  - `AiProvider` 列舉擴充：支援 6 種 Provider（OpenAI, Claude, Gemini API/CLI, Copilot CLI, Claude CLI）
+  - 13 個單元測試（AiExecutionModeTest）
+
+- **Story 9.2: Google Gemini API 整合** ✅
+  - `GeminiApiService`: 完整 Gemini API v1beta 整合
+  - `GeminiApiRequest/Response`: API 請求/回應模型（Builder 模式）
+  - `AiModel` 列舉擴充：GEMINI_1_5_PRO（1M token context）、GEMINI_1_5_FLASH
+  - `AiServiceFactory` 更新：支援 Gemini 路由與便利方法
+  - Safety Settings 配置：BLOCK_ONLY_HIGH 閥值（允許安全分析內容）
+  - 13 個單元測試（GeminiApiServiceTest）
+
+- **Story 9.3: CLI 整合框架** ✅
+  - `AbstractCliExecutor`: 通用 CLI 執行器基類（60s timeout, graceful/forceful 終止, 串流讀取）
+  - `ProcessCliExecutor`: 具體 CLI 執行器（Builder 模式, 預設參數, 版本檢查）
+  - `AbstractCliService`: CLI 模式 AI 服務基類（命令建構, 輸出解析範本方法）
+  - 19 個單元測試（ProcessCliExecutorTest，包含 Windows/Unix 平台測試）
+
+- **Story 9.7: 配置管理更新** ✅
+  - `AiOwaspPlugin` 更新：17 個配置屬性（從 14 個增加）
+  - AI Provider 下拉選單：6 個選項（openai, anthropic, gemini-api, gemini-cli, copilot-cli, claude-cli）
+  - AI Model 下拉選單：8 個模型選項（包含 Gemini models）
+  - CLI 路徑配置：3 個新屬性（Gemini CLI, Copilot CLI, Claude CLI 工具路徑）
+  - README.md 更新：完整 6 種 Provider 配置說明、API/CLI 模式範例、配置優勢說明
+
 ---
 
 ## [2.0.0] - 2025-10-20
