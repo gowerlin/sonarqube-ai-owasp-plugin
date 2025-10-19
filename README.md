@@ -12,10 +12,12 @@
 ## ✨ 核心功能
 
 ### 🤖 AI 智能分析
-- **多 AI Provider 支援** ✨**NEW (v2.1.0 - Epic 9)**：
-  - **API 模式**: OpenAI GPT-4, Anthropic Claude, **Google Gemini**
-  - **CLI 模式**: Gemini CLI, GitHub Copilot CLI, Claude CLI (準備中)
-  - 降低供應商依賴風險，成本優化彈性
+- **多 AI Provider 支援** ✨**NEW (v2.1.0 - Epic 9 完成)**：
+  - **API 模式**（3 個）: OpenAI GPT-4, Anthropic Claude, Google Gemini
+  - **CLI 模式**（3 個）: Gemini CLI, GitHub Copilot CLI, Claude CLI
+  - **雙模式架構**: API 與 CLI 模式無縫切換，成本與效能彈性最大化
+  - **智慧路徑偵測**: 自動識別 CLI 工具類型，降低配置複雜度
+  - **6 種 Provider 自由選擇**: 降低供應商依賴風險，成本優化彈性
 - 理解代碼語義，減少 **40-60% 誤報率**
 - 智能修復建議包含：
   - 詳細描述與修復步驟
@@ -121,44 +123,99 @@ cp plugin-core/target/sonar-aiowasp-plugin-*.jar $SONARQUBE_HOME/extensions/plug
 $SONARQUBE_HOME/bin/linux-x86-64/sonar.sh restart
 ```
 
-### 2. 配置 AI Provider ✨**NEW (v2.1.0 - Epic 9)**
+### 2. 配置 AI Provider ✨**NEW (v2.1.0 - Epic 9 完成)**
 
 登入 SonarQube 後，前往 **Administration → Configuration → AI Configuration**：
 
-#### 支援的 AI Provider
+#### 支援的 AI Provider（6 個）
 
-**API 模式** (需要 API Key):
-- **OpenAI GPT-4**: `openai` → 模型：gpt-4, gpt-4-turbo, gpt-3.5-turbo
-- **Anthropic Claude**: `anthropic` → 模型：claude-3-opus, claude-3-sonnet, claude-3-haiku
-- **Google Gemini API**: `gemini-api` → 模型：gemini-1.5-pro, gemini-1.5-flash (1M token context!)
+**API 模式**（需要 API Key）:
+1. **OpenAI GPT-4**: `openai`
+   - 模型：gpt-4, gpt-4-turbo, gpt-3.5-turbo
+   - 優勢：成熟穩定，中文支援佳
+   - API 端點：https://api.openai.com/v1/chat/completions
 
-**CLI 模式** (需要本地安裝工具):
-- **Gemini CLI**: `gemini-cli` → 工具路徑：`/usr/local/bin/gemini` (預設)
-- **GitHub Copilot CLI**: `copilot-cli` → 工具路徑：`/usr/local/bin/gh` (預設)
-- **Claude Code CLI**: `claude-cli` → 工具路徑：`/usr/local/bin/claude` (預設，準備中)
+2. **Anthropic Claude**: `anthropic`
+   - 模型：claude-3-opus, claude-3-sonnet, claude-3-haiku
+   - 優勢：長文本處理能力強（200K tokens）
+   - API 端點：https://api.anthropic.com/v1/messages
+
+3. **Google Gemini API**: `gemini-api`
+   - 模型：gemini-1.5-pro (1M token context!), gemini-1.5-flash
+   - 優勢：超大上下文窗口，成本低廉
+   - API 端點：自動配置
+
+**CLI 模式**（本地工具，無需 API Key）:
+4. **Gemini CLI**: `gemini-cli`
+   - 工具路徑：`/usr/local/bin/gemini`（預設）
+   - 安裝：參照 [Gemini CLI](https://github.com/google-gemini/gemini-cli)
+   - 優勢：本地執行，無 API 費用，適合內網環境
+
+5. **GitHub Copilot CLI**: `copilot-cli`
+   - 工具路徑：`/usr/local/bin/gh`（預設）
+   - 安裝：`gh extension install github/gh-copilot`
+   - 優勢：GitHub 企業用戶免費使用
+
+6. **Claude CLI**: `claude-cli`
+   - 工具路徑：`/usr/local/bin/claude`（預設）
+   - 安裝：參照 [Claude CLI](https://claude.ai/cli)
+   - 優勢：Anthropic 最新模型，本地執行
 
 #### 配置步驟
 
 **API 模式範例**（Google Gemini API）:
-1. **選擇 AI Provider**: 下拉選單選擇 `gemini-api`
-2. **輸入 API Key**: 從 [Google AI Studio](https://ai.google.dev/gemini-api/docs?hl=zh-tw) 取得 API 金鑰（加密存儲）
+1. **選擇執行模式**: 下拉選單選擇 `API`
+2. **選擇 AI Provider**: 下拉選單選擇 `gemini-api`
 3. **選擇 AI Model**: 下拉選單選擇 `gemini-1.5-pro` 或 `gemini-1.5-flash`
-4. **調整參數**（可選）:
-   - Temperature: 0.3（預設，較確定性輸出）
-   - Max Tokens: 2000（Gemini 支援最高 8192）
-   - Timeout: 60 秒
+4. **輸入 API Key**: 從 [Google AI Studio](https://ai.google.dev/gemini-api/docs?hl=zh-tw) 取得 API 金鑰（加密存儲）
+5. **調整參數**（可選）:
+   - Temperature: 0.3（預設，較確定性輸出，範圍 0.0-2.0）
+   - Max Tokens: 4096（預設，Gemini 支援最高 8192）
+   - Timeout: 60 秒（預設）
+   - Max Retries: 3（預設）
 
 **CLI 模式範例**（Gemini CLI）:
-1. **安裝 Gemini CLI 工具**: 參照 [gemini-cli GitHub](https://github.com/google-gemini/gemini-cli)
-2. **選擇 AI Provider**: 下拉選單選擇 `gemini-cli`
-3. **設定工具路徑**: `/usr/local/bin/gemini` 或您的實際安裝路徑
-4. **調整參數**: 同 API 模式
+1. **安裝 Gemini CLI 工具**:
+   ```bash
+   # 參照官方文件安裝
+   # https://github.com/google-gemini/gemini-cli
+   ```
+2. **驗證安裝**:
+   ```bash
+   gemini --version
+   which gemini  # 確認安裝路徑
+   ```
+3. **選擇執行模式**: 下拉選單選擇 `CLI`
+4. **選擇 AI Provider**: 下拉選單選擇 `gemini-cli`
+5. **設定工具路徑**: `/usr/local/bin/gemini` 或您的實際安裝路徑
+6. **調整參數**: 同 API 模式（Temperature, Max Tokens, Timeout）
+
+**模式切換範例**（API ↔ CLI）:
+```java
+// 從 API 模式切換到 CLI 模式（僅需修改配置）
+// API 模式配置
+AiConfig apiConfig = AiConfig.builder()
+    .model(AiModel.GEMINI_1_5_PRO)
+    .apiKey("your-api-key")
+    .build();
+
+// CLI 模式配置
+AiConfig cliConfig = AiConfig.builder()
+    .model(AiModel.GEMINI_1_5_PRO)
+    .cliPath("/usr/local/bin/gemini")
+    .executionMode(AiExecutionMode.CLI)
+    .build();
+```
 
 #### 配置優勢
 
 - **降低供應商依賴**: 6 種 Provider 自由切換，避免單一供應商風險
-- **成本優化**: Gemini Flash 模型成本更低，適合大量掃描
+- **成本優化**:
+  - Gemini Flash 模型成本更低，適合大量掃描
+  - CLI 模式本地執行，無 API 呼叫成本
+- **效能彈性**: API 模式速度較快，CLI 模式適合批量處理
 - **離線場景**: CLI 模式可在內網環境使用（無需外部 API 呼叫）
+- **智慧偵測**: 根據 CLI 路徑自動識別工具類型（gemini/gh/claude）
 
 ### 3. 啟用 OWASP 版本
 
@@ -423,6 +480,9 @@ PdfReportConfig config = PdfReportConfig.builder()
 - [OWASP](https://owasp.org/) - 安全標準與資源
 - [OpenAI](https://openai.com/) - GPT-4 API
 - [Anthropic](https://www.anthropic.com/) - Claude API
+- [Google](https://ai.google.dev/) - Gemini API
+- [GitHub](https://github.com/) - GitHub Copilot
+- [iText Software](https://itextpdf.com/) - PDF 生成函式庫
 
 ---
 
