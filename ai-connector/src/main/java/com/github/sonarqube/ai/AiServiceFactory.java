@@ -6,6 +6,7 @@ import com.github.sonarqube.ai.model.AiConfig;
 import com.github.sonarqube.ai.model.AiExecutionMode;
 import com.github.sonarqube.ai.provider.ClaudeService;
 import com.github.sonarqube.ai.provider.OpenAiService;
+import com.github.sonarqube.ai.provider.claude.ClaudeCliService;
 import com.github.sonarqube.ai.provider.copilot.CopilotCliService;
 import com.github.sonarqube.ai.provider.gemini.GeminiApiService;
 import com.github.sonarqube.ai.provider.gemini.GeminiCliService;
@@ -26,7 +27,7 @@ public class AiServiceFactory {
      *
      * 支援 API 模式與 CLI 模式：
      * - API 模式：OpenAI, Claude, Gemini API
-     * - CLI 模式：Gemini CLI, Copilot CLI (準備中), Claude CLI (準備中)
+     * - CLI 模式：Gemini CLI, Copilot CLI, Claude CLI
      *
      * @param config AI 配置
      * @return AI 服務實例
@@ -84,13 +85,18 @@ public class AiServiceFactory {
             return new GeminiCliService(config, executor);
         } else if (cliPath.contains("gh") || cliPath.contains("copilot")) {
             return new CopilotCliService(config, executor);
+        } else if (cliPath.contains("claude")) {
+            return new ClaudeCliService(config, executor);
         } else if (config.getModel().isGemini()) {
             // 備用：根據模型類型判斷
             return new GeminiCliService(config, executor);
+        } else if (config.getModel().isClaude()) {
+            // 備用：根據模型類型判斷
+            return new ClaudeCliService(config, executor);
         } else {
             throw new IllegalArgumentException(
                 "Unsupported CLI tool: " + config.getCliPath() +
-                ". Currently supported: Gemini CLI (gemini), GitHub Copilot CLI (gh)"
+                ". Currently supported: Gemini CLI (gemini), GitHub Copilot CLI (gh), Claude CLI (claude)"
             );
         }
     }
@@ -177,6 +183,27 @@ public class AiServiceFactory {
             .build();
 
         return new CopilotCliService(config, executor);
+    }
+
+    /**
+     * 建立預設的 Claude CLI 服務實例
+     *
+     * @param cliPath Claude CLI 工具路徑
+     * @return Claude CLI 服務實例
+     */
+    public static AiService createClaudeCliService(String cliPath) {
+        AiConfig config = AiConfig.builder()
+            .model(com.github.sonarqube.ai.model.AiModel.CLAUDE_3_OPUS)
+            .cliPath(cliPath)
+            .executionMode(AiExecutionMode.CLI)
+            .build();
+
+        CliExecutor executor = ProcessCliExecutor.builder()
+            .cliPath(cliPath)
+            .timeout(60)
+            .build();
+
+        return new ClaudeCliService(config, executor);
     }
 
     // 私有建構子，防止實例化
