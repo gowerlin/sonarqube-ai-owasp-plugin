@@ -2,11 +2,20 @@ package com.github.sonarqube.report.pdf;
 
 import com.github.sonarqube.report.ReportGenerator;
 import com.github.sonarqube.report.model.AnalysisReport;
+import com.github.sonarqube.report.model.ReportSummary;
 import com.github.sonarqube.report.model.SecurityFinding;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.*;
-import com.itextpdf.kernel.pdf.filespec.PdfFileSpec;
+import com.itextpdf.kernel.pdf.navigation.PdfDestination;
+import com.itextpdf.kernel.pdf.navigation.PdfExplicitDestination;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.AreaBreak;
+import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.pdfa.PdfADocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,14 +112,16 @@ public class PdfReportGenerator implements ReportGenerator {
                         generationTime
                 );
 
-                // 佔位符內容（Stories 1.3-1.5 將新增實際內容）
-                document.add(new Paragraph("Content will be added in subsequent stories...")
+                // Story 1.3: 建立執行摘要與統計表格
+                createExecutiveSummary(document, report);
+
+                // 佔位符內容（Stories 1.4-1.5 將新增實際內容）
+                document.add(new Paragraph("Additional content will be added in subsequent stories...")
                         .setMarginTop(50f));
-                document.add(new Paragraph("- Story 1.3: Executive Summary and Statistical Tables"));
                 document.add(new Paragraph("- Story 1.4: Visual Charts (Severity, Category Distribution)"));
                 document.add(new Paragraph("- Story 1.5: Detailed Findings Section with Code Snippets"));
 
-                LOG.debug("PDF document structure created (Stories 1.1-1.2 complete)");
+                LOG.debug("PDF document structure created (Stories 1.1-1.3 complete)");
             }
 
             LOG.info("PDF report generated successfully: {}", outputPath);
@@ -203,6 +214,250 @@ public class PdfReportGenerator implements ReportGenerator {
 
         LOG.debug("Created {} TOC sections", sections.size());
         return sections;
+    }
+
+    /**
+     * 建立執行摘要（Executive Summary）章節
+     *
+     * <p><strong>章節內容：</strong></p>
+     * <ul>
+     *   <li>章節標題「Executive Summary」</li>
+     *   <li>統計表格（總發現數、BLOCKER/CRITICAL/MAJOR 數量、分析檔案數）</li>
+     *   <li>自動生成的描述文字（3-5 句）</li>
+     *   <li>PDF 書籤（目錄導航）</li>
+     * </ul>
+     *
+     * @param doc iText Document 物件
+     * @param report 分析報告
+     * @throws IOException 若字型載入失敗
+     * @since 2.0.0 (Story 1.3)
+     */
+    private void createExecutiveSummary(Document doc, AnalysisReport report) throws IOException {
+        LOG.info("Creating executive summary");
+
+        ReportSummary summary = report.getReportSummary();
+        PdfDocument pdfDoc = doc.getPdfDocument();
+
+        // 新增 PDF 書籤（目錄導航）
+        PdfOutline rootOutline = pdfDoc.getOutlines(false);
+        PdfOutline summaryOutline = rootOutline.addOutline("Executive Summary");
+        summaryOutline.addDestination(PdfExplicitDestination.createFit(pdfDoc.getLastPage()));
+
+        // 章節標題
+        PdfFont titleFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA_BOLD);
+        Paragraph title = new Paragraph("Executive Summary")
+                .setFont(titleFont)
+                .setFontSize(PdfStyleConstants.SUMMARY_TITLE_SIZE)
+                .setFontColor(PdfStyleConstants.SECTION_TITLE_COLOR)
+                .setBold()
+                .setMarginBottom(20f);
+        doc.add(title);
+
+        // 統計表格
+        Table statisticsTable = createStatisticsTable(summary);
+        doc.add(statisticsTable);
+
+        // 自動生成的摘要文字
+        Paragraph summaryText = generateSummaryText(summary);
+        doc.add(summaryText);
+
+        // 分頁
+        doc.add(new AreaBreak());
+
+        LOG.info("Executive summary created successfully");
+    }
+
+    /**
+     * 建立統計表格
+     *
+     * <p><strong>表格結構：</strong></p>
+     * <ul>
+     *   <li>標題行：深灰色背景，白色文字</li>
+     *   <li>資料行：交替白色和淺灰色背景</li>
+     *   <li>嚴重性行：使用顏色標籤（BLOCKER=紅色, CRITICAL=橙色, MAJOR=黃色）</li>
+     * </ul>
+     *
+     * @param summary 報告摘要資料
+     * @return iText Table 物件
+     * @throws IOException 若字型載入失敗
+     */
+    private Table createStatisticsTable(ReportSummary summary) throws IOException {
+        LOG.debug("Creating statistics table");
+
+        // 建立 2 欄表格（指標名稱、數值）
+        Table table = new Table(UnitValue.createPercentArray(new float[]{70, 30}));
+        table.setWidth(UnitValue.createPercentValue(80)); // 表格寬度 80%
+        table.setMarginTop(10f);
+        table.setMarginBottom(20f);
+
+        PdfFont headerFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA_BOLD);
+        PdfFont dataFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA);
+
+        // 標題行
+        table.addHeaderCell(createHeaderCell("Metric", headerFont));
+        table.addHeaderCell(createHeaderCell("Count", headerFont));
+
+        // 資料行索引（用於交替背景顏色）
+        int rowIndex = 0;
+
+        // 總發現數
+        table.addCell(createDataCell("Total Findings", dataFont, rowIndex));
+        table.addCell(createDataCell(String.valueOf(summary.getTotalFindings()), dataFont, rowIndex));
+        rowIndex++;
+
+        // BLOCKER 數量（紅色標籤）
+        table.addCell(createDataCell("BLOCKER Issues", dataFont, rowIndex));
+        table.addCell(createSeverityCell(summary.getBlockerCount(),
+                PdfStyleConstants.SEVERITY_BLOCKER_COLOR, dataFont, rowIndex));
+        rowIndex++;
+
+        // CRITICAL 數量（橙色標籤）
+        table.addCell(createDataCell("CRITICAL Issues", dataFont, rowIndex));
+        table.addCell(createSeverityCell(summary.getCriticalCount(),
+                PdfStyleConstants.SEVERITY_CRITICAL_COLOR, dataFont, rowIndex));
+        rowIndex++;
+
+        // MAJOR 數量（黃色標籤）
+        table.addCell(createDataCell("MAJOR Issues", dataFont, rowIndex));
+        table.addCell(createSeverityCell(summary.getMajorCount(),
+                PdfStyleConstants.SEVERITY_MAJOR_COLOR, dataFont, rowIndex));
+        rowIndex++;
+
+        // 分析檔案數（若有資料）
+        if (summary.getAnalyzedFilesCount() > 0) {
+            table.addCell(createDataCell("Analyzed Files", dataFont, rowIndex));
+            table.addCell(createDataCell(String.valueOf(summary.getAnalyzedFilesCount()), dataFont, rowIndex));
+        }
+
+        LOG.debug("Statistics table created with {} rows", rowIndex + 1);
+        return table;
+    }
+
+    /**
+     * 建立表格標題儲存格
+     *
+     * @param text 儲存格文字
+     * @param font 字型
+     * @return iText Cell 物件
+     */
+    private Cell createHeaderCell(String text, PdfFont font) {
+        return new Cell()
+                .add(new Paragraph(text))
+                .setBackgroundColor(PdfStyleConstants.TABLE_HEADER_BACKGROUND)
+                .setFontColor(PdfStyleConstants.TABLE_HEADER_TEXT_COLOR)
+                .setFont(font)
+                .setFontSize(PdfStyleConstants.HEADER_TITLE_SIZE)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER)
+                .setPadding(PdfStyleConstants.TABLE_CELL_PADDING);
+    }
+
+    /**
+     * 建立表格資料儲存格
+     *
+     * @param text 儲存格文字
+     * @param font 字型
+     * @param rowIndex 行索引（用於交替背景顏色）
+     * @return iText Cell 物件
+     */
+    private Cell createDataCell(String text, PdfFont font, int rowIndex) {
+        boolean isEvenRow = (rowIndex % 2 == 0);
+        return new Cell()
+                .add(new Paragraph(text))
+                .setBackgroundColor(isEvenRow ?
+                        PdfStyleConstants.TABLE_DATA_BACKGROUND_LIGHT :
+                        PdfStyleConstants.TABLE_DATA_BACKGROUND_DARK)
+                .setFont(font)
+                .setFontSize(PdfStyleConstants.BODY_TEXT_SIZE)
+                .setTextAlignment(TextAlignment.LEFT)
+                .setPadding(PdfStyleConstants.TABLE_CELL_PADDING);
+    }
+
+    /**
+     * 建立嚴重性數量儲存格（帶顏色標籤）
+     *
+     * @param count 數量
+     * @param severityColor 嚴重性顏色
+     * @param font 字型
+     * @param rowIndex 行索引
+     * @return iText Cell 物件
+     */
+    private Cell createSeverityCell(int count, com.itextpdf.kernel.colors.Color severityColor,
+                                      PdfFont font, int rowIndex) {
+        boolean isEvenRow = (rowIndex % 2 == 0);
+        return new Cell()
+                .add(new Paragraph(String.valueOf(count)).setBold())
+                .setBackgroundColor(isEvenRow ?
+                        PdfStyleConstants.TABLE_DATA_BACKGROUND_LIGHT :
+                        PdfStyleConstants.TABLE_DATA_BACKGROUND_DARK)
+                .setFont(font)
+                .setFontSize(PdfStyleConstants.BODY_TEXT_SIZE)
+                .setFontColor(severityColor) // 使用嚴重性顏色
+                .setTextAlignment(TextAlignment.CENTER)
+                .setPadding(PdfStyleConstants.TABLE_CELL_PADDING);
+    }
+
+    /**
+     * 生成摘要文字
+     *
+     * <p>根據統計資料自動生成描述文字（3-5 句）。</p>
+     *
+     * <p><strong>生成邏輯：</strong></p>
+     * <ul>
+     *   <li>無發現：「No security issues detected.」</li>
+     *   <li>1-10 個發現：「This project has X findings, Y require immediate attention.」</li>
+     *   <li>>10 個發現：「This project has X findings, including Y critical issues that require immediate attention.」</li>
+     * </ul>
+     *
+     * @param summary 報告摘要資料
+     * @return iText Paragraph 物件
+     * @throws IOException 若字型載入失敗
+     */
+    private Paragraph generateSummaryText(ReportSummary summary) throws IOException {
+        LOG.debug("Generating summary text");
+
+        PdfFont textFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA);
+        String summaryText;
+
+        int totalFindings = summary.getTotalFindings();
+        int criticalCount = summary.getBlockerCount() + summary.getCriticalCount();
+
+        if (totalFindings == 0) {
+            // 無安全問題
+            summaryText = "No security issues were detected in this project. " +
+                    "The codebase meets the OWASP security standards analyzed.";
+        } else if (totalFindings <= 10) {
+            // 少量問題
+            if (criticalCount > 0) {
+                summaryText = String.format(
+                        "This project has %d security finding%s, %d of which require immediate attention. " +
+                                "Please review the BLOCKER and CRITICAL issues as a priority.",
+                        totalFindings, totalFindings > 1 ? "s" : "", criticalCount
+                );
+            } else {
+                summaryText = String.format(
+                        "This project has %d security finding%s. " +
+                                "While no critical issues were found, it is recommended to address these findings to improve security posture.",
+                        totalFindings, totalFindings > 1 ? "s" : ""
+                );
+            }
+        } else {
+            // 大量問題
+            summaryText = String.format(
+                    "This project has %d security findings, including %d critical issues that require immediate attention. " +
+                            "We recommend prioritizing the BLOCKER and CRITICAL issues first, followed by addressing MAJOR issues. " +
+                            "Please refer to the detailed findings section below for specific recommendations and remediation steps.",
+                    totalFindings, criticalCount
+            );
+        }
+
+        return new Paragraph(summaryText)
+                .setFont(textFont)
+                .setFontSize(PdfStyleConstants.SUMMARY_TEXT_SIZE)
+                .setFontColor(PdfStyleConstants.BODY_TEXT_COLOR)
+                .setTextAlignment(TextAlignment.LEFT)
+                .setMarginTop(20f)
+                .setMarginBottom(30f);
     }
 
     /**

@@ -239,6 +239,129 @@ public final class PdfStyleConstants {
      */
     public static final float TABLE_BORDER_THICKNESS = 0.5f;
 
+    // ==================== Severity Colors (Story 1.3) ====================
+
+    /**
+     * 嚴重性顏色：BLOCKER（紅色 #D4333F）
+     *
+     * <p>用於 BLOCKER 級別問題的背景或標籤顏色。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color SEVERITY_BLOCKER_COLOR = new DeviceRgb(212, 51, 63); // Red
+
+    /**
+     * 嚴重性顏色：CRITICAL（橙色 #FFA500）
+     *
+     * <p>用於 CRITICAL 級別問題的背景或標籤顏色。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color SEVERITY_CRITICAL_COLOR = new DeviceRgb(255, 165, 0); // Orange
+
+    /**
+     * 嚴重性顏色：MAJOR（黃色 #FFD700）
+     *
+     * <p>用於 MAJOR 級別問題的背景或標籤顏色。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color SEVERITY_MAJOR_COLOR = new DeviceRgb(255, 215, 0); // Gold/Yellow
+
+    /**
+     * 嚴重性顏色：MINOR（藍色 #4B9FD5）
+     *
+     * <p>用於 MINOR 級別問題的背景或標籤顏色。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color SEVERITY_MINOR_COLOR = new DeviceRgb(75, 159, 213); // Blue
+
+    /**
+     * 嚴重性顏色：INFO（綠色 #00AA00）
+     *
+     * <p>用於 INFO 級別問題的背景或標籤顏色。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color SEVERITY_INFO_COLOR = new DeviceRgb(0, 170, 0); // Green
+
+    // ==================== Table Styles (Story 1.3) ====================
+
+    /**
+     * 表格標題行背景顏色：深灰色 (#333333)
+     *
+     * <p>用於表格標題行，提供高對比度。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color TABLE_HEADER_BACKGROUND = new DeviceRgb(51, 51, 51); // Dark Gray
+
+    /**
+     * 表格標題行文字顏色：白色 (#FFFFFF)
+     *
+     * <p>用於表格標題行文字，搭配深灰色背景。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color TABLE_HEADER_TEXT_COLOR = new DeviceRgb(255, 255, 255); // White
+
+    /**
+     * 表格資料行背景顏色（淺色）：白色 (#FFFFFF)
+     *
+     * <p>用於表格交替行背景（奇數行）。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color TABLE_DATA_BACKGROUND_LIGHT = new DeviceRgb(255, 255, 255); // White
+
+    /**
+     * 表格資料行背景顏色（深色）：淺灰色 (#F5F5F5)
+     *
+     * <p>用於表格交替行背景（偶數行），提升可讀性。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color TABLE_DATA_BACKGROUND_DARK = new DeviceRgb(245, 245, 245); // Light Gray
+
+    /**
+     * 表格邊框顏色：中灰色 (#CCCCCC)
+     *
+     * <p>用於表格外框和內部分隔線。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final Color TABLE_BORDER_COLOR = new DeviceRgb(204, 204, 204); // Gray
+
+    /**
+     * 表格儲存格內邊距：10 像素
+     *
+     * <p>儲存格內容與邊框之間的空白。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final float TABLE_CELL_PADDING = 10f;
+
+    // ==================== Summary Section Fonts (Story 1.3) ====================
+
+    /**
+     * 執行摘要標題字型大小：16pt
+     *
+     * <p>用於「Executive Summary」章節標題。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final float SUMMARY_TITLE_SIZE = 16f;
+
+    /**
+     * 執行摘要內文字型大小：12pt
+     *
+     * <p>用於執行摘要的描述文字。</p>
+     *
+     * @since 2.0.0 (Story 1.3)
+     */
+    public static final float SUMMARY_TEXT_SIZE = 12f;
+
     // ==================== Color Theme Support (Future Extension) ====================
 
     /**
