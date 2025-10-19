@@ -1,6 +1,7 @@
 package com.github.sonarqube.report.pdf;
 
 import com.github.sonarqube.report.ReportGenerator;
+import com.github.sonarqube.report.exception.ReportGenerationException;
 import com.github.sonarqube.report.model.AnalysisReport;
 import com.github.sonarqube.report.model.ReportSummary;
 import com.github.sonarqube.report.model.SecurityFinding;
@@ -21,6 +22,7 @@ import com.itextpdf.pdfa.PdfADocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
@@ -28,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -60,60 +63,189 @@ public class PdfReportGenerator implements ReportGenerator {
 
     private static final Logger LOG = LoggerFactory.getLogger(PdfReportGenerator.class);
 
+    // Story 1.7: 超時控制（60 秒）
+    private static final int GENERATION_TIMEOUT_SECONDS = 60;
+
+    // Story 1.7: 大型報表閾值（>500 個發現需要批次處理）
+    private static final int LARGE_REPORT_THRESHOLD = 500;
+
+    // Story 1.7: 批次處理大小
+    private static final int BATCH_SIZE = 100;
+
     private final PdfLayoutManager layoutManager = new PdfLayoutManager();
     private final PdfChartGenerator chartGenerator = new PdfChartGenerator();
+
+    // Story 1.7: ExecutorService for timeout control
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     /**
      * 生成 PDF 格式的安全分析報告
      *
-     * <p><strong>當前版本（Story 1.2）：</strong>包含封面頁、目錄、頁首頁尾。
-     * 後續 Stories 將新增執行摘要、圖表、詳細發現等內容。</p>
+     * <p><strong>Story 1.7 增強：</strong>全面錯誤處理、超時控制、效能優化、詳細日誌。</p>
      *
-     * <p><strong>輸出位置：</strong>target/test-report.pdf（臨時位置）。</p>
+     * <p><strong>錯誤處理：</strong></p>
+     * <ul>
+     *   <li>超時控制：60 秒後自動中斷</li>
+     *   <li>記憶體不足：捕獲 OutOfMemoryError 並提供建議</li>
+     *   <li>iText 異常：捕獲 PdfException 並記錄詳細資訊</li>
+     *   <li>空報告：生成包含「No security issues found」訊息的 PDF</li>
+     * </ul>
      *
-     * <p><strong>錯誤處理：</strong>所有 iText 例外都會被捕獲並記錄，
-     * 確保不影響其他報表生成器（如 Markdown）。</p>
+     * <p><strong>效能優化：</strong></p>
+     * <ul>
+     *   <li>串流寫入：避免完整 PDF 在記憶體中建構</li>
+     *   <li>批次處理：大型報表（>500 個發現）分批處理</li>
+     *   <li>圖表快取：相同資料的圖表僅生成一次</li>
+     * </ul>
      *
-     * @param report 分析報告數據，包含專案名稱、OWASP 版本、發現等資訊。
-     *               不可為 null。空報告（0 個發現）將在 Story 1.7 處理。
+     * <p><strong>效能指標：</strong>記錄生成時間、檔案大小、記憶體使用。</p>
+     *
+     * @param report 分析報告數據，包含專案名稱、OWASP 版本、發現等資訊。不可為 null。
      * @return 生成的 PDF 檔案絕對路徑
-     * @throws IllegalArgumentException 如果 report 為 null
+     * @throws ReportGenerationException 如果 PDF 生成失敗
      */
     @Override
-    public String generate(AnalysisReport report) {
+    public String generate(AnalysisReport report) throws ReportGenerationException {
+        // Story 1.7: 輸入驗證
         if (report == null) {
-            throw new IllegalArgumentException("AnalysisReport cannot be null");
+            LOG.error("AnalysisReport cannot be null");
+            throw new ReportGenerationException(
+                    ReportGenerationException.ErrorCode.INVALID_INPUT,
+                    "AnalysisReport cannot be null");
         }
 
-        LOG.info("Starting PDF report generation for project: {}", report.getProjectName());
+        LOG.info("Starting PDF generation for project: {}", report.getProjectName());
+
+        // Story 1.7: 效能指標 - 記錄開始時間
+        long startTime = System.currentTimeMillis();
+        long initialMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 
         try {
-            String outputPath = "target/test-report.pdf";
-            PdfReportConfig config = PdfReportConfig.builder().build(); // 預設配置
+            // Story 1.7: 使用 Future 實作超時控制
+            Future<String> future = executorService.submit(() -> generateInternal(report));
 
-            // 使用 try-with-resources 確保資源正確釋放
-            try (PdfWriter writer = new PdfWriter(outputPath);
-                 PdfADocument pdfADoc = createPdfADocument(writer);
-                 Document document = new Document(pdfADoc)) {
+            String outputPath = future.get(GENERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
-                // Story 1.2: 建立封面頁
-                layoutManager.createCoverPage(document, report, config);
+            // Story 1.7: 效能指標 - 記錄完成狀態
+            long duration = System.currentTimeMillis() - startTime;
+            long finalMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+            long memoryUsed = finalMemory - initialMemory;
 
-                // Story 1.2: 建立目錄（章節結構）
-                List<PdfLayoutManager.TocSection> sections = createSectionList(report);
-                layoutManager.createTableOfContents(document, sections);
+            File pdfFile = new File(outputPath);
+            long fileSize = pdfFile.exists() ? pdfFile.length() : 0;
 
-                // Story 1.2: 註冊頁首頁尾事件處理器
-                String generationTime = LocalDateTime.now()
-                        .format(DateTimeFormatter.ISO_DATE_TIME);
-                layoutManager.addHeaderFooter(
-                        writer,
-                        config,
-                        report.getProjectName(),
-                        report.getOwaspVersion(),
-                        generationTime
-                );
+            LOG.info("PDF generated successfully: {} bytes in {}ms, memory used: {} bytes",
+                    fileSize, duration, memoryUsed);
 
+            return outputPath;
+
+        } catch (TimeoutException e) {
+            // Story 1.7: 超時錯誤處理
+            LOG.error("PDF generation timeout after {} seconds for project: {}",
+                    GENERATION_TIMEOUT_SECONDS, report.getProjectName());
+            throw new ReportGenerationException(
+                    ReportGenerationException.ErrorCode.TIMEOUT,
+                    String.format("PDF generation timeout after %d seconds", GENERATION_TIMEOUT_SECONDS),
+                    e);
+
+        } catch (OutOfMemoryError e) {
+            // Story 1.7: 記憶體不足錯誤處理
+            LOG.error("Out of memory during PDF generation for project: {}. " +
+                            "Current findings: {}. Increase JVM heap size or reduce report size.",
+                    report.getProjectName(),
+                    report.getFindings() != null ? report.getFindings().size() : 0);
+            throw new ReportGenerationException(
+                    ReportGenerationException.ErrorCode.OUT_OF_MEMORY,
+                    "Insufficient memory for PDF generation. Increase JVM heap size (-Xmx) or reduce report size.",
+                    e);
+
+        } catch (ExecutionException e) {
+            // Story 1.7: 執行異常處理（包裝內部異常）
+            Throwable cause = e.getCause();
+
+            if (cause instanceof PdfException) {
+                LOG.error("iText PDF generation error for project: {}: {}",
+                        report.getProjectName(), cause.getMessage(), cause);
+                throw new ReportGenerationException(
+                        ReportGenerationException.ErrorCode.PDF_GENERATION_FAILED,
+                        "iText library error: " + cause.getMessage(),
+                        cause);
+            } else if (cause instanceof IOException) {
+                LOG.error("File I/O error during PDF generation for project: {}: {}",
+                        report.getProjectName(), cause.getMessage(), cause);
+                throw new ReportGenerationException(
+                        ReportGenerationException.ErrorCode.FILE_IO_ERROR,
+                        "File I/O error: " + cause.getMessage(),
+                        cause);
+            } else {
+                LOG.error("Unexpected error during PDF generation for project: {}",
+                        report.getProjectName(), cause);
+                throw new ReportGenerationException(
+                        ReportGenerationException.ErrorCode.UNEXPECTED_ERROR,
+                        cause != null ? cause.getMessage() : "Unknown error",
+                        cause);
+            }
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.error("PDF generation interrupted for project: {}", report.getProjectName());
+            throw new ReportGenerationException(
+                    ReportGenerationException.ErrorCode.UNEXPECTED_ERROR,
+                    "PDF generation interrupted",
+                    e);
+        }
+    }
+
+    /**
+     * 內部 PDF 生成方法（由 ExecutorService 執行）
+     *
+     * <p>Story 1.7: 此方法由 generate() 透過 ExecutorService 調用，支援超時控制。</p>
+     *
+     * @param report 分析報告
+     * @return 生成的 PDF 檔案路徑
+     * @throws IOException 如果檔案操作失敗
+     */
+    private String generateInternal(AnalysisReport report) throws IOException {
+        String outputPath = "target/test-report.pdf";
+        PdfReportConfig config = PdfReportConfig.builder().build(); // 預設配置
+
+        // Story 1.7: 檢查是否為空報告
+        boolean isEmptyReport = report.getFindings() == null || report.getFindings().isEmpty();
+        if (isEmptyReport) {
+            LOG.warn("No security findings in report for project: {}, generating empty report",
+                    report.getProjectName());
+        }
+
+        // Story 1.7: 使用 try-with-resources 確保資源正確釋放（串流寫入優化）
+        try (PdfWriter writer = new PdfWriter(outputPath);
+             PdfADocument pdfADoc = createPdfADocument(writer);
+             Document document = new Document(pdfADoc)) {
+
+            // Story 1.7: 啟用 PDF 壓縮以減少檔案大小
+            pdfADoc.setCompressionLevel(CompressionConstants.DEFAULT_COMPRESSION);
+
+            // Story 1.2: 建立封面頁
+            layoutManager.createCoverPage(document, report, config);
+
+            // Story 1.2: 建立目錄（章節結構）
+            List<PdfLayoutManager.TocSection> sections = createSectionList(report);
+            layoutManager.createTableOfContents(document, sections);
+
+            // Story 1.2: 註冊頁首頁尾事件處理器
+            String generationTime = LocalDateTime.now()
+                    .format(DateTimeFormatter.ISO_DATE_TIME);
+            layoutManager.addHeaderFooter(
+                    writer,
+                    config,
+                    report.getProjectName(),
+                    report.getOwaspVersion(),
+                    generationTime
+            );
+
+            // Story 1.7: 空報告處理
+            if (isEmptyReport) {
+                createEmptyReportContent(document);
+            } else {
                 // Story 1.3: 建立執行摘要與統計表格
                 createExecutiveSummary(document, report);
 
@@ -123,20 +255,54 @@ public class PdfReportGenerator implements ReportGenerator {
                 // Story 1.4: 建立 OWASP 分類分布長條圖
                 createOwaspCategorySection(document, report);
 
-                // Story 1.5: 建立詳細發現區段
-                createDetailedFindingsSection(document, report);
-
-                LOG.debug("PDF document structure created (Stories 1.1-1.5 complete)");
+                // Story 1.5 & 1.7: 建立詳細發現區段（支援批次處理）
+                createDetailedFindingsSectionWithBatching(document, report);
             }
 
-            LOG.info("PDF report generated successfully: {}", outputPath);
-            return outputPath;
-
-        } catch (IOException e) {
-            LOG.error("Failed to generate PDF report for project: {}", report.getProjectName(), e);
-            // 不拋出例外，確保不影響其他報表生成器
-            return null;
+            LOG.debug("PDF document structure created (Stories 1.1-1.7 complete)");
         }
+
+        LOG.debug("PDF report written to: {}", outputPath);
+        return outputPath;
+    }
+
+    /**
+     * 建立空報告內容
+     *
+     * <p>Story 1.7: 當分析報告無安全發現時，生成包含「No security issues found」訊息的 PDF。</p>
+     *
+     * @param document PDF 文件
+     * @throws IOException 如果字型載入失敗
+     */
+    private void createEmptyReportContent(Document document) throws IOException {
+        PdfFont titleFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA_BOLD);
+        PdfFont textFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA);
+
+        document.add(new AreaBreak());
+
+        Paragraph title = new Paragraph("Analysis Summary")
+                .setFont(titleFont)
+                .setFontSize(PdfStyleConstants.SECTION_TITLE_SIZE)
+                .setFontColor(PdfStyleConstants.HEADER_TEXT_COLOR)
+                .setBold()
+                .setMarginBottom(20f);
+        document.add(title);
+
+        Paragraph message = new Paragraph("No security issues found.")
+                .setFont(textFont)
+                .setFontSize(PdfStyleConstants.BODY_TEXT_SIZE)
+                .setFontColor(PdfStyleConstants.BODY_TEXT_COLOR)
+                .setMarginBottom(20f);
+        document.add(message);
+
+        Paragraph congratulations = new Paragraph(
+                "Congratulations! Your project passed all OWASP security checks with no vulnerabilities detected.")
+                .setFont(textFont)
+                .setFontSize(PdfStyleConstants.BODY_TEXT_SIZE)
+                .setFontColor(PdfStyleConstants.BODY_TEXT_COLOR);
+        document.add(congratulations);
+
+        LOG.info("Empty report content created");
     }
 
     /**
