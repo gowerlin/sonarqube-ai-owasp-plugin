@@ -1,0 +1,18 @@
+# 自動產生 .gitignore
+.vs/
+.cr/
+.sonar/
+.sonarqube/
+.sonarlint/
+.scannerwork/
+packages/
+Thumbs.db
+node_modules/
+dist/
+out/
+.env
+.DS_Store
+*.log
+*.bak
+*.tmp
+npm-debug.log
