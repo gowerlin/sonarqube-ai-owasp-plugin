@@ -3,6 +3,7 @@ package com.github.sonarqube.ai.provider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.sonarqube.ai.AiException;
 import com.github.sonarqube.ai.AiService;
+import com.github.sonarqube.ai.cache.AiCacheManager;
 import com.github.sonarqube.ai.model.AiConfig;
 import com.github.sonarqube.ai.model.AiRequest;
 import com.github.sonarqube.ai.model.AiResponse;
@@ -33,8 +34,13 @@ public class ClaudeService implements AiService {
     private final AiConfig config;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final AiCacheManager cacheManager;
 
     public ClaudeService(AiConfig config) {
+        this(config, null);
+    }
+
+    public ClaudeService(AiConfig config, AiCacheManager cacheManager) {
         if (config == null || !config.isValid()) {
             throw new IllegalArgumentException("Invalid AI configuration");
         }
@@ -44,6 +50,7 @@ public class ClaudeService implements AiService {
         this.config = config;
         this.objectMapper = new ObjectMapper();
         this.httpClient = createHttpClient();
+        this.cacheManager = cacheManager;
     }
 
     /**
@@ -60,6 +67,14 @@ public class ClaudeService implements AiService {
 
     @Override
     public AiResponse analyzeCode(AiRequest request) throws AiException {
+        // 檢查快取
+        if (cacheManager != null) {
+            AiResponse cachedResponse = cacheManager.getFromCache(request);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+        }
+
         long startTime = System.currentTimeMillis();
 
         try {
@@ -80,7 +95,14 @@ public class ClaudeService implements AiService {
             }
 
             // 解析回應
-            return parseResponse(apiResponse, System.currentTimeMillis() - startTime);
+            AiResponse response = parseResponse(apiResponse, System.currentTimeMillis() - startTime);
+
+            // 存入快取
+            if (cacheManager != null && response.isSuccess()) {
+                cacheManager.putToCache(request, response);
+            }
+
+            return response;
 
         } catch (IOException e) {
             throw new AiException(
