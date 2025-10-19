@@ -61,6 +61,13 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- PDF 生成 (iText 7) - Story 1.1 -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itext7-core</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+
         <!-- 測試依賴 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -69,6 +76,13 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+        </dependency>
+        <!-- PDF 驗證 (Apache PDFBox) - Story 1.1 -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>2.0.30</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

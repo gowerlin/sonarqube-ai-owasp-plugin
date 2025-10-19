@@ -35,6 +35,11 @@
 ### 📊 豐富報告
 - **HTML 格式**：統計圖表、漏洞列表、互動式 UI
 - **JSON 格式**：結構化數據，API 整合友好
+- **PDF 格式** ✨**NEW (v2.0.0)**：
+  - 企業級 PDF 報表（封面頁、目錄、圖表、詳細發現）
+  - 可客製化品牌（Logo、標題、色彩主題）
+  - PDF/A-1b 合規（長期存檔標準）
+  - 使用 iText 7 生成（AGPL 3.0 license）
 - **多版本對照報告**：2-3 版本並排比較
 - **報告生成時間**：5-10 分鐘（從 8-16 小時手動生成）
 
@@ -271,6 +276,18 @@ mvn jacoco:report
 ## 📄 授權
 
 本專案採用 [Apache License 2.0](LICENSE) 授權。
+
+### 第三方授權聲明
+
+**iText 7 PDF Library** (用於 PDF 報表生成功能):
+- **授權**: AGPL 3.0 (開源) 或商業授權 (雙授權模式)
+- **版本**: 7.2.5+
+- **影響**:
+  - 如果您分發修改版本的插件，AGPL 3.0 要求您公開原始碼
+  - 企業客戶若不希望公開原始碼，可向 [iText Software](https://itextpdf.com/) 購買商業授權
+- **更多資訊**: [iText Licensing](https://itextpdf.com/en/how-buy/legal/agpl-gnu-affero-general-public-license)
+
+**注意**: Markdown 和 JSON 報表生成功能不使用 iText，不受 AGPL 授權影響。
 
 ---
 
