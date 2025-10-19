@@ -60,6 +60,7 @@ public class PdfReportGenerator implements ReportGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(PdfReportGenerator.class);
 
     private final PdfLayoutManager layoutManager = new PdfLayoutManager();
+    private final PdfChartGenerator chartGenerator = new PdfChartGenerator();
 
     /**
      * 生成 PDF 格式的安全分析報告
@@ -115,13 +116,17 @@ public class PdfReportGenerator implements ReportGenerator {
                 // Story 1.3: 建立執行摘要與統計表格
                 createExecutiveSummary(document, report);
 
-                // 佔位符內容（Stories 1.4-1.5 將新增實際內容）
-                document.add(new Paragraph("Additional content will be added in subsequent stories...")
-                        .setMarginTop(50f));
-                document.add(new Paragraph("- Story 1.4: Visual Charts (Severity, Category Distribution)"));
-                document.add(new Paragraph("- Story 1.5: Detailed Findings Section with Code Snippets"));
+                // Story 1.4: 建立嚴重性分布圓餅圖
+                createSeverityDistributionSection(document, report);
 
-                LOG.debug("PDF document structure created (Stories 1.1-1.3 complete)");
+                // Story 1.4: 建立 OWASP 分類分布長條圖
+                createOwaspCategorySection(document, report);
+
+                // 佔位符內容（Story 1.5 將新增實際內容）
+                document.add(new Paragraph("- Story 1.5: Detailed Findings Section with Code Snippets")
+                        .setMarginTop(50f));
+
+                LOG.debug("PDF document structure created (Stories 1.1-1.4 complete)");
             }
 
             LOG.info("PDF report generated successfully: {}", outputPath);
@@ -458,6 +463,124 @@ public class PdfReportGenerator implements ReportGenerator {
                 .setTextAlignment(TextAlignment.LEFT)
                 .setMarginTop(20f)
                 .setMarginBottom(30f);
+    }
+
+    /**
+     * 建立嚴重性分布圖表章節
+     *
+     * <p><strong>章節內容：</strong></p>
+     * <ul>
+     *   <li>章節標題「Severity Distribution」</li>
+     *   <li>圓餅圖（400x300px）顯示各嚴重性等級的百分比分布</li>
+     *   <li>使用顏色編碼：BLOCKER=紅色, CRITICAL=橙色, MAJOR=黃色, MINOR=藍色, INFO=綠色</li>
+     *   <li>PDF 書籤（目錄導航）</li>
+     * </ul>
+     *
+     * @param doc iText Document 物件
+     * @param report 分析報告
+     * @throws IOException 若圖表生成失敗
+     * @since 2.0.0 (Story 1.4)
+     */
+    private void createSeverityDistributionSection(Document doc, AnalysisReport report) throws IOException {
+        LOG.info("Creating severity distribution chart section");
+
+        PdfDocument pdfDoc = doc.getPdfDocument();
+        ReportSummary summary = report.getReportSummary();
+
+        // 新增 PDF 書籤（目錄導航）
+        PdfOutline rootOutline = pdfDoc.getOutlines(false);
+        PdfOutline severityOutline = rootOutline.addOutline("Severity Distribution");
+        severityOutline.addDestination(PdfExplicitDestination.createFit(pdfDoc.getLastPage()));
+
+        // 章節標題
+        PdfFont titleFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA_BOLD);
+        Paragraph title = new Paragraph("Severity Distribution")
+                .setFont(titleFont)
+                .setFontSize(PdfStyleConstants.SECTION_TITLE_SIZE)
+                .setFontColor(PdfStyleConstants.SECTION_TITLE_COLOR)
+                .setBold()
+                .setMarginBottom(20f);
+        doc.add(title);
+
+        // 生成圓餅圖
+        com.itextpdf.layout.element.Image severityChart = chartGenerator.generateSeverityPieChart(summary);
+        severityChart.setHorizontalAlignment(com.itextpdf.layout.properties.HorizontalAlignment.CENTER);
+        severityChart.setMarginTop(10f);
+        severityChart.setMarginBottom(30f);
+        doc.add(severityChart);
+
+        // 分頁
+        doc.add(new AreaBreak());
+
+        LOG.info("Severity distribution chart section created successfully");
+    }
+
+    /**
+     * 建立 OWASP 分類分布圖表章節
+     *
+     * <p><strong>章節內容：</strong></p>
+     * <ul>
+     *   <li>章節標題「OWASP Category Distribution」</li>
+     *   <li>長條圖（600x400px）顯示各 OWASP 類別的問題數量</li>
+     *   <li>長條依數量降序排列</li>
+     *   <li>使用深藍色 (#003F7F)</li>
+     *   <li>PDF 書籤（目錄導航）</li>
+     * </ul>
+     *
+     * @param doc iText Document 物件
+     * @param report 分析報告
+     * @throws IOException 若圖表生成失敗
+     * @since 2.0.0 (Story 1.4)
+     */
+    private void createOwaspCategorySection(Document doc, AnalysisReport report) throws IOException {
+        LOG.info("Creating OWASP category distribution chart section");
+
+        PdfDocument pdfDoc = doc.getPdfDocument();
+
+        // 新增 PDF 書籤（目錄導航）
+        PdfOutline rootOutline = pdfDoc.getOutlines(false);
+        PdfOutline owaspOutline = rootOutline.addOutline("OWASP Category Distribution");
+        owaspOutline.addDestination(PdfExplicitDestination.createFit(pdfDoc.getLastPage()));
+
+        // 章節標題
+        PdfFont titleFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA_BOLD);
+        Paragraph title = new Paragraph("OWASP Category Distribution")
+                .setFont(titleFont)
+                .setFontSize(PdfStyleConstants.SECTION_TITLE_SIZE)
+                .setFontColor(PdfStyleConstants.SECTION_TITLE_COLOR)
+                .setBold()
+                .setMarginBottom(20f);
+        doc.add(title);
+
+        // 計算 OWASP 分類分布
+        Map<String, Long> categoryDistribution = report.getFindings().stream()
+                .filter(finding -> finding.getOwaspCategory() != null)
+                .collect(Collectors.groupingBy(
+                        SecurityFinding::getOwaspCategory,
+                        Collectors.counting()));
+
+        if (categoryDistribution.isEmpty()) {
+            // 無 OWASP 分類資料
+            PdfFont textFont = PdfFontFactory.createFont(PdfStyleConstants.FONT_HELVETICA);
+            Paragraph noData = new Paragraph("No OWASP category data available.")
+                    .setFont(textFont)
+                    .setFontSize(PdfStyleConstants.BODY_TEXT_SIZE)
+                    .setFontColor(PdfStyleConstants.BODY_TEXT_COLOR)
+                    .setMarginTop(20f);
+            doc.add(noData);
+        } else {
+            // 生成長條圖
+            com.itextpdf.layout.element.Image owaspChart = chartGenerator.generateOwaspCategoryBarChart(categoryDistribution);
+            owaspChart.setHorizontalAlignment(com.itextpdf.layout.properties.HorizontalAlignment.CENTER);
+            owaspChart.setMarginTop(10f);
+            owaspChart.setMarginBottom(30f);
+            doc.add(owaspChart);
+        }
+
+        // 分頁
+        doc.add(new AreaBreak());
+
+        LOG.info("OWASP category distribution chart section created successfully");
     }
 
     /**

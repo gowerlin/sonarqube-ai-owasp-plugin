@@ -68,6 +68,13 @@
             <version>7.2.5</version>
         </dependency>
 
+        <!-- 圖表生成 (XChart) - Story 1.4 -->
+        <dependency>
+            <groupId>org.knowm.xchart</groupId>
+            <artifactId>xchart</artifactId>
+            <version>3.8.5</version>
+        </dependency>
+
         <!-- 測試依賴 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
