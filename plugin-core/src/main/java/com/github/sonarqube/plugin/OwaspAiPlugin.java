@@ -16,12 +16,17 @@ public class OwaspAiPlugin implements Plugin {
     public void define(Context context) {
         // 插件基本資訊已在 pom.xml 中定義
 
-        // TODO: 註冊組件
-        // context.addExtensions(
-        //     OwaspRulesDefinition.class,
-        //     OwaspQualityProfile.class,
-        //     OwaspSensor.class
-        // );
+        // 註冊組件
+        context.addExtensions(
+            // 規則定義
+            OwaspRulesDefinition.class,
+
+            // 品質設定檔
+            OwaspQualityProfile.class,
+
+            // 掃描感測器
+            OwaspSensor.class
+        );
     }
 
     /**
