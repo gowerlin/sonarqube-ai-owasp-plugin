@@ -1,9 +1,13 @@
 package com.github.sonarqube.ai;
 
+import com.github.sonarqube.ai.cli.CliExecutor;
+import com.github.sonarqube.ai.cli.ProcessCliExecutor;
 import com.github.sonarqube.ai.model.AiConfig;
+import com.github.sonarqube.ai.model.AiExecutionMode;
 import com.github.sonarqube.ai.provider.ClaudeService;
 import com.github.sonarqube.ai.provider.OpenAiService;
 import com.github.sonarqube.ai.provider.gemini.GeminiApiService;
+import com.github.sonarqube.ai.provider.gemini.GeminiCliService;
 
 /**
  * AI 服務工廠
@@ -19,6 +23,10 @@ public class AiServiceFactory {
     /**
      * 根據配置建立 AI 服務實例
      *
+     * 支援 API 模式與 CLI 模式：
+     * - API 模式：OpenAI, Claude, Gemini API
+     * - CLI 模式：Gemini CLI, Copilot CLI (準備中), Claude CLI (準備中)
+     *
      * @param config AI 配置
      * @return AI 服務實例
      * @throws IllegalArgumentException 當模型類型不支援時拋出
@@ -28,6 +36,14 @@ public class AiServiceFactory {
             throw new IllegalArgumentException("Invalid AI configuration");
         }
 
+        AiExecutionMode mode = config.getExecutionMode();
+
+        // CLI 模式
+        if (mode == AiExecutionMode.CLI) {
+            return createCliService(config);
+        }
+
+        // API 模式
         if (config.getModel().isOpenAI()) {
             return new OpenAiService(config);
         } else if (config.getModel().isClaude()) {
@@ -37,6 +53,35 @@ public class AiServiceFactory {
         } else {
             throw new IllegalArgumentException(
                 "Unsupported AI model: " + config.getModel().getModelId()
+            );
+        }
+    }
+
+    /**
+     * 建立 CLI 模式 AI 服務
+     *
+     * @param config AI 配置（必須包含 cliPath）
+     * @return CLI AI 服務實例
+     * @throws IllegalArgumentException 當 CLI 類型不支援時拋出
+     */
+    private static AiService createCliService(AiConfig config) {
+        if (config.getCliPath() == null || config.getCliPath().trim().isEmpty()) {
+            throw new IllegalArgumentException("CLI path is required for CLI mode");
+        }
+
+        // 建立 CLI 執行器
+        CliExecutor executor = ProcessCliExecutor.builder()
+            .cliPath(config.getCliPath())
+            .timeout(config.getTimeoutSeconds())
+            .build();
+
+        // 根據模型類型建立對應的 CLI 服務
+        if (config.getModel().isGemini()) {
+            return new GeminiCliService(config, executor);
+        } else {
+            throw new IllegalArgumentException(
+                "Unsupported CLI model: " + config.getModel().getModelId() +
+                ". Currently supported: Gemini CLI"
             );
         }
     }
@@ -70,10 +115,10 @@ public class AiServiceFactory {
     }
 
     /**
-     * 建立預設的 Gemini 服務實例
+     * 建立預設的 Gemini API 服務實例
      *
      * @param apiKey Google Gemini API 金鑰
-     * @return Gemini 服務實例
+     * @return Gemini API 服務實例
      */
     public static AiService createGeminiService(String apiKey) {
         AiConfig config = AiConfig.builder()
@@ -81,6 +126,27 @@ public class AiServiceFactory {
             .apiKey(apiKey)
             .build();
         return new GeminiApiService(config);
+    }
+
+    /**
+     * 建立預設的 Gemini CLI 服務實例
+     *
+     * @param cliPath Gemini CLI 工具路徑
+     * @return Gemini CLI 服務實例
+     */
+    public static AiService createGeminiCliService(String cliPath) {
+        AiConfig config = AiConfig.builder()
+            .model(com.github.sonarqube.ai.model.AiModel.GEMINI_1_5_PRO)
+            .cliPath(cliPath)
+            .executionMode(AiExecutionMode.CLI)
+            .build();
+
+        CliExecutor executor = ProcessCliExecutor.builder()
+            .cliPath(cliPath)
+            .timeout(60)
+            .build();
+
+        return new GeminiCliService(config, executor);
     }
 
     // 私有建構子，防止實例化

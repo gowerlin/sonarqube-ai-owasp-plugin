@@ -19,6 +19,10 @@ public class AiConfig {
     private final int maxRetries;
     private final long retryDelayMs;
 
+    // CLI 模式配置 (Epic 9)
+    private final String cliPath;
+    private final AiExecutionMode executionMode;
+
     private AiConfig(Builder builder) {
         this.model = builder.model;
         this.apiKey = builder.apiKey;
@@ -28,6 +32,8 @@ public class AiConfig {
         this.maxTokens = builder.maxTokens;
         this.maxRetries = builder.maxRetries;
         this.retryDelayMs = builder.retryDelayMs;
+        this.cliPath = builder.cliPath;
+        this.executionMode = builder.executionMode;
     }
 
     public AiModel getModel() {
@@ -62,19 +68,37 @@ public class AiConfig {
         return retryDelayMs;
     }
 
+    public String getCliPath() {
+        return cliPath;
+    }
+
+    public AiExecutionMode getExecutionMode() {
+        return executionMode != null ? executionMode : AiExecutionMode.API;
+    }
+
     /**
      * 驗證配置是否有效
      *
      * @return true 如果配置有效
      */
     public boolean isValid() {
-        return model != null
-            && apiKey != null && !apiKey.trim().isEmpty()
-            && apiEndpoint != null && !apiEndpoint.trim().isEmpty()
-            && timeoutSeconds > 0
-            && temperature >= 0.0 && temperature <= 2.0
-            && maxTokens > 0
-            && maxRetries >= 0;
+        // 基本驗證
+        if (model == null || timeoutSeconds <= 0 || temperature < 0.0 || temperature > 2.0 || maxTokens <= 0 || maxRetries < 0) {
+            return false;
+        }
+
+        // 根據執行模式驗證
+        AiExecutionMode mode = getExecutionMode();
+        if (mode == AiExecutionMode.API) {
+            // API 模式需要 API key 和 endpoint
+            return apiKey != null && !apiKey.trim().isEmpty()
+                && apiEndpoint != null && !apiEndpoint.trim().isEmpty();
+        } else if (mode == AiExecutionMode.CLI) {
+            // CLI 模式需要 CLI 路徑
+            return cliPath != null && !cliPath.trim().isEmpty();
+        }
+
+        return false;
     }
 
     /**
@@ -98,6 +122,8 @@ public class AiConfig {
         private int maxTokens = 4096; // 預設 4096
         private int maxRetries = 3; // 預設重試 3 次
         private long retryDelayMs = 1000; // 預設延遲 1 秒
+        private String cliPath; // CLI 工具路徑 (Epic 9)
+        private AiExecutionMode executionMode; // 執行模式 (Epic 9)
 
         public Builder model(AiModel model) {
             this.model = model;
@@ -144,6 +170,16 @@ public class AiConfig {
 
         public Builder retryDelayMs(long retryDelayMs) {
             this.retryDelayMs = retryDelayMs;
+            return this;
+        }
+
+        public Builder cliPath(String cliPath) {
+            this.cliPath = cliPath;
+            return this;
+        }
+
+        public Builder executionMode(AiExecutionMode executionMode) {
+            this.executionMode = executionMode;
             return this;
         }
 
