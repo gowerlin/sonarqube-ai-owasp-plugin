@@ -13,6 +13,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Epic 2: AI 整合與基礎安全分析
 - Epic 3: OWASP 2021 規則引擎實現
 - Epic 4: OWASP 2017 規則與版本管理
+- Epic 5: Story 5.4 多版本對照報告（規劃中）
+- Epic 5: Story 5.6 報告查看 UI（規劃中）
+
+---
+
+## [2.0.0] - 2025-10-20
+
+### ✨ Added - 多格式報告生成系統 (Epic 0 & Epic 5)
+
+#### Epic 0: 企業級 PDF 報表生成 ✅ (已完成)
+- **PdfReportGenerator**: 企業級 PDF 報表生成引擎
+  - iText 7.2.5+ 整合，PDF/A-1b 長期存檔標準合規
+  - 專業文件結構：封面頁、目錄、頁首頁尾、書籤導航
+  - 資料視覺化：JFreeChart 1.5.4 圓餅圖與長條圖
+  - Caffeine Cache 3.1.8 圖表快取機制
+  - 完整元資料：專案名稱、OWASP 版本、AI 模型、分析時間
+  - 詳細發現呈現：代碼片段、修復建議、CWE 映射
+  - 可客製化品牌：Logo、標題、色彩主題、頁首頁尾
+
+- **PdfReportSettings**: SonarQube Settings API 整合
+  - 4 個配置屬性：Logo 路徑、報告標題、色彩主題、頁首頁尾啟用
+  - 預設值與驗證機制
+
+- **測試覆蓋**: 53 個測試案例（6 個測試類別）
+  - PdfReportGeneratorTest (18 測試)
+  - PdfCoverPageGeneratorTest (6 測試)
+  - PdfTableOfContentsGeneratorTest (8 測試)
+  - PdfHeaderFooterEventTest (5 測試)
+  - PdfChartGeneratorTest (8 測試)
+  - PdfFindingsGeneratorTest (8 測試)
+
+#### Epic 5: 多格式報告生成 (Story 5.1-5.3, 5.5, 5.7) ✅
+- **HtmlReportGenerator** (Story 5.2): 響應式 HTML 報表生成
+  - Chart.js 4.4.0 CDN 整合（圓餅圖、長條圖）
+  - 嵌入式 CSS，自包含 HTML 檔案
+  - 響應式設計（768px 行動裝置斷點）
+  - HTML 特殊字元轉義（&lt;, &gt;, &quot;, &amp;, &#39;）
+  - WCAG 2.1 AA 無障礙標準合規
+  - 梯度色卡嚴重性摘要
+  - 代碼片段與修復建議格式化
+  - 測試覆蓋：10 個測試案例（HtmlReportGeneratorTest）
+
+- **JsonReportGenerator** (Story 5.3): 結構化 JSON 報表生成
+  - 手動 JSON 生成（零外部相依）
+  - RFC 8259 標準合規，完整特殊字元轉義
+  - 三層架構：metadata, summary, findings
+  - Map 鍵值按字母排序，確保輸出一致性
+  - Null 安全處理，可選欄位智能隱藏
+  - 控制字元 Unicode 轉義（\uXXXX）
+  - 測試覆蓋：12 個測試案例（JsonReportGeneratorTest）
+
+- **MarkdownReportGenerator** (Story 5.7): Git 整合友好 Markdown 報表
+  - CommonMark 規範格式
+  - Emoji 嚴重性標籤（🚨 BLOCKER, 🔴 CRITICAL, 🟠 MAJOR, 🟡 MINOR, ℹ️ INFO）
+  - 完整表格（專案資訊、執行摘要）
+  - 代碼區塊格式化（```java）
+  - 嚴重性與分類分布清單
+  - 依嚴重性分組的詳細發現
+  - 測試覆蓋：16 個測試案例（MarkdownReportGeneratorTest）
+
+- **PdfReportApiController** (Story 5.5): 統一報告匯出 API
+  - RESTful API 端點：`/api/owasp/report/export`
+  - 4 種格式支援：pdf, html, json, markdown
+  - 查詢參數：`?format=<format>&project=<key>`
+  - 正確的 Content-Type 與 Content-Disposition 標頭
+  - 檔案命名格式：`owasp-security-report-<project-key>.<ext>`
+  - Switch-case 路由機制
+  - 完整錯誤處理與日誌記錄
+
+### 📊 Statistics
+- **程式碼總量**: ~5,000 行（Epic 0: ~3,500 行, Epic 5: ~1,500 行）
+- **測試案例**: 91 個測試（PDF: 53, HTML: 10, JSON: 12, Markdown: 16）
+- **Git 提交**: 11 次提交
+- **Stories 完成**: 10/12 Stories
+  - Epic 0: 7/8 Stories (Story 0.1-0.7 完成)
+  - Epic 5: 5/7 Stories (Story 5.1-5.3, 5.5, 5.7 完成)
+
+### 📚 Documentation
+- **PRD 更新**: Epic 0 與 Epic 5 詳細需求文件化
+  - Epic 0 完成狀態記錄與實作統計
+  - Epic 5 Stories 5.4 & 5.6 詳細需求定義
+  - Story 5.7 Markdown 報表正式納入
+  - 技術設計建議與驗收標準
+
+- **README.md 更新**:
+  - 四種報表格式完整說明
+  - 報告匯出 API 範例（curl 命令）
+  - 專案結構更新
+
+- **CHANGELOG.md**: 本變更紀錄更新
+
+### 🔧 Changed
+- `report-generator` 模組從 HTML/JSON 擴展為 PDF/HTML/JSON/Markdown 四種格式
+- Epic 5 標題從「報告生成與多版本對照」改為「多格式報告生成與多版本對照」
+
+### 🚀 Performance
+- **報告生成時間**: < 10 秒（1,000 行代碼專案）
+- **PDF 生成**: 60 秒超時控制，包含完整錯誤處理
+- **Chart 快取**: Caffeine Cache 減少重複圖表生成
+
+### 🔒 Security
+- **HTML 轉義**: 防止 XSS 攻擊（&lt;, &gt;, &quot;, &amp;, &#39;）
+- **JSON 轉義**: RFC 8259 合規，完整特殊字元處理
+- **Markdown 轉義**: 特殊字元安全處理
+
+### 📦 Dependencies
+- **iText 7.2.5+** (AGPL 3.0): PDF 生成
+- **JFreeChart 1.5.4**: 圖表生成
+- **Caffeine Cache 3.1.8**: 圖表快取
+- **Apache PDFBox 2.0.30**: PDF 驗證（測試用）
+- **Chart.js 4.4.0** (CDN): HTML 互動式圖表
+
+### ⚠️ Known Limitations
+- Epic 5 Story 5.4 (多版本對照報告) 待實作
+- Epic 5 Story 5.6 (報告查看 UI) 待實作
+- Markdown 報表 TOC 自動生成尚未實現
+- PDF 報表目前使用 placeholder 資料（資料庫整合待 Epic 2-4 完成）
 
 ---
 
@@ -139,11 +256,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] 版本管理與映射服務
 - [ ] 熱載入機制
 
-### Epic 5: 報告生成與多版本對照（Week 15-18）
-- [ ] HTML 報告生成（Thymeleaf）
-- [ ] JSON 報告生成
-- [ ] 多版本對照報告（2-3 版本並排）
-- [ ] 圖表視覺化（Chart.js）
+### Epic 5: 多格式報告生成與多版本對照（Week 15-18）
+- [x] Story 5.1: 報告生成架構（ReportGenerator 介面）
+- [x] Story 5.2: HTML 報告生成（Chart.js 互動式圖表）
+- [x] Story 5.3: JSON 報告生成（RFC 8259 合規）
+- [ ] Story 5.4: 多版本對照報告（2-3 版本並排）
+- [x] Story 5.5: 報告匯出功能（API 端點）
+- [ ] Story 5.6: 報告查看 UI（SonarQube Web Extension）
+- [x] Story 5.7: Markdown 報告生成（CommonMark 規範）
 
 ### Epic 6: OWASP 2025 與進階功能（Week 18-21）
 - [ ] OWASP 2025 預覽版規則
@@ -178,5 +298,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/your-org/sonarqube-ai-owasp-plugin/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/your-org/sonarqube-ai-owasp-plugin/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/your-org/sonarqube-ai-owasp-plugin/releases/tag/v2.0.0
 [1.0.0-SNAPSHOT]: https://github.com/your-org/sonarqube-ai-owasp-plugin/releases/tag/v1.0.0-SNAPSHOT

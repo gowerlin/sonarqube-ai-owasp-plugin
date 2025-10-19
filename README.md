@@ -33,17 +33,38 @@
 - **響應時間**：< 30 秒/1000 行代碼
 
 ### 📊 豐富報告
-- **HTML 格式**：統計圖表、漏洞列表、互動式 UI
-- **JSON 格式**：結構化數據，API 整合友好
-- **PDF 格式** ✨**NEW (v2.0.0)**：
+
+**四種格式，滿足不同需求**：
+
+- **HTML 格式** ✨**NEW (v2.0.0)**：
+  - 響應式設計，支援桌面與行動裝置
+  - Chart.js 互動式圖表（嚴重性圓餅圖、OWASP 分類長條圖）
+  - 詳細漏洞列表（代碼片段、修復建議、CWE 映射）
+  - 符合 WCAG 2.1 AA 無障礙標準
+
+- **JSON 格式** ✨**NEW (v2.0.0)**：
+  - RFC 8259 標準結構化數據
+  - 三層架構：metadata、summary、findings
+  - API 整合友好，支援自動化處理
+  - 零外部相依（手動 JSON 生成）
+
+- **Markdown 格式** ✨**NEW (v2.0.0)**：
+  - CommonMark 規範易讀格式
+  - Git 整合友好，版本控制追蹤
+  - 完整表格、代碼區塊、Emoji 標籤
+  - 適合技術文件和 README 嵌入
+
+- **PDF 格式** (v2.0.0)：
   - 企業級 PDF 報表（封面頁、目錄、圖表、詳細發現）
   - 可客製化品牌（Logo、標題、色彩主題）
   - PDF/A-1b 合規（長期存檔標準）
   - 專業頁首頁尾（Logo、專案名稱、頁碼、時間戳記）
   - 可點擊書籤導航（Adobe Reader 支援）
   - 使用 iText 7 生成（AGPL 3.0 license）
-- **多版本對照報告**：2-3 版本並排比較
+
+- **多版本對照報告** (規劃中)：2-3 版本並排比較，差異高亮分析
 - **報告生成時間**：5-10 分鐘（從 8-16 小時手動生成）
+- **匯出 API**：`/api/owasp/report/export?format=pdf|html|json|markdown&project=<key>`
 
 ### 🔧 完整配置
 - AI 模型選擇與參數調整
@@ -132,12 +153,36 @@ sonar-scanner \
   -Dsonar.login=<your-token>
 ```
 
-### 5. 查看報告
+### 5. 查看與匯出報告
 
 掃描完成後，前往 SonarQube 專案頁面：
 - **Security Hotspots**: 查看 OWASP 漏洞列表
-- **More → OWASP Report**: 查看多版本對照報告
-- **Download Report**: 下載 HTML/JSON 格式報告
+- **More → OWASP Report**: 查看多版本對照報告（規劃中）
+- **Download Report**: 匯出多格式報告
+
+#### 匯出報告 API
+
+```bash
+# 匯出 PDF 報告
+curl "http://localhost:9000/api/owasp/report/export?format=pdf&project=my-project" \
+  -H "Authorization: Bearer <token>" \
+  -o report.pdf
+
+# 匯出 HTML 報告
+curl "http://localhost:9000/api/owasp/report/export?format=html&project=my-project" \
+  -H "Authorization: Bearer <token>" \
+  -o report.html
+
+# 匯出 JSON 報告（API 整合）
+curl "http://localhost:9000/api/owasp/report/export?format=json&project=my-project" \
+  -H "Authorization: Bearer <token>" \
+  -o report.json
+
+# 匯出 Markdown 報告（Git 整合）
+curl "http://localhost:9000/api/owasp/report/export?format=markdown&project=my-project" \
+  -H "Authorization: Bearer <token>" \
+  -o report.md
+```
 
 ---
 
@@ -189,7 +234,7 @@ sonarqube-ai-owasp-plugin/
 │   ├── owasp2017/        # 2017 版本規則（10 個類別）
 │   ├── owasp2021/        # 2021 版本規則（10 個類別）
 │   └── owasp2025/        # 2025 預備版規則（10 個類別）
-├── report-generator/      # HTML/JSON 報告生成
+├── report-generator/      # 多格式報告生成（PDF/HTML/JSON/Markdown）
 ├── version-manager/       # 版本管理與映射
 ├── config-manager/        # 配置管理
 ├── shared-utils/          # 共用工具程式庫
