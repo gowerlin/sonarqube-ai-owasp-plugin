@@ -213,6 +213,12 @@ sonarqube-ai-owasp-plugin/
 
 ## Epic List
 
+### Epic 0: 企業級 PDF 報表生成（已完成）
+**目標**：實現專業的 PDF 報表生成引擎，支援 PDF/A-1b 長期存檔標準
+**預估時長**：2-3 週
+**狀態**：✅ 已完成 (2025-10-20)
+**參考文件**：`docs/EPIC1_COMPLETION_SUMMARY.md`, `docs/prd-pdf-enhancement/epic-1-enterprise-pdf-report-generation.md`
+
 ### Epic 1: 基礎架構與專案設置
 **目標**：建立專案基礎設施、CI/CD 流程、核心插件框架
 **預估時長**：2-3 週
@@ -229,9 +235,10 @@ sonarqube-ai-owasp-plugin/
 **目標**：實現 OWASP 2017 規則，建立版本管理架構
 **預估時長**：2-3 週
 
-### Epic 5: 報告生成與多版本對照
-**目標**：實現 HTML/JSON 報告，支援多版本對照
-**預估時長**：3-4 週
+### Epic 5: 多格式報告生成與多版本對照
+**目標**：實現 HTML/JSON/Markdown 報告，支援多版本對照和報告查看 UI
+**預估時長**：4-5 週
+**當前狀態**：🔄 進行中 (3/7 Stories 完成)
 
 ### Epic 6: OWASP 2025 預備版與進階功能
 **目標**：實現 OWASP 2025 前瞻規則，完成效能優化
@@ -244,6 +251,52 @@ sonarqube-ai-owasp-plugin/
 ### Epic 8: 測試、文件與發布準備
 **目標**：完整測試套件、用戶文件、MVP 發布
 **預估時長**：2-3 週
+
+---
+
+## Epic 0: 企業級 PDF 報表生成（已完成）
+
+**背景說明**：此 Epic 原為獨立的 PDF 報表增強專案，已於 2025-10-20 完成實作，現納入主 PRD 以明確其在整體專案中的定位。
+
+**核心成就**：
+- ✅ 企業級 PDF 生成引擎（iText 7.2.5+, PDF/A-1b 合規）
+- ✅ 專業文件結構（封面頁、目錄、頁首頁尾、書籤導航）
+- ✅ 資料視覺化（嚴重性圓餅圖、OWASP 分類長條圖，使用 JFreeChart + Caffeine Cache）
+- ✅ 詳細發現呈現（代碼片段、修復建議、完整元資料）
+- ✅ 配置管理後端（SonarQube Settings API、RESTful export API）
+- ✅ 生產級品質（60 秒超時控制、全面錯誤處理、效能指標記錄）
+
+**實作統計**：
+- 程式碼總量：~3,500 行
+- 測試案例：53 個測試案例（6 個測試類別）
+- Git 提交：8 次提交
+- Stories 完成：7/8 Stories (Story 1.1-1.7 完成，1.8 部分完成)
+
+**技術棧**：
+- iText 7.2.5+ (PDF 生成，AGPL 3.0)
+- JFreeChart 1.5.4 (圖表生成)
+- Caffeine Cache 3.1.8 (圖表快取)
+- Apache PDFBox 2.0.30 (PDF 驗證，測試用)
+
+**已實作 Stories**：
+- Story 0.1: PDF 報表架構與基礎設置
+- Story 0.2: 封面頁與目錄生成
+- Story 0.3: 頁首頁尾與頁碼
+- Story 0.4: 圓餅圖與長條圖視覺化
+- Story 0.5: 詳細發現區塊（代碼片段、修復建議）
+- Story 0.6: 配置管理與 API 整合
+- Story 0.7: 錯誤處理、日誌與效能優化
+- Story 0.8: 測試與文件（部分完成）
+
+**參考文件**：
+- 完整實作總結：`docs/EPIC1_COMPLETION_SUMMARY.md`
+- 原始 PRD：`docs/prd-pdf-enhancement/epic-1-enterprise-pdf-report-generation.md`
+- Story 詳細記錄：`docs/stories/1.1.story.md` 至 `docs/stories/1.8.story.md`
+
+**與主 PRD 的關聯**：
+- Epic 0 實作的 PDF 報表生成功能將作為 Epic 5 的補充，與 HTML/JSON/Markdown 報表共同提供多格式報告匯出能力
+- Epic 0 的配置管理後端（Story 0.6）可復用於 Epic 5 和 Epic 7 的報告配置需求
+- Epic 0 的錯誤處理與效能優化（Story 0.7）為其他 Epic 提供最佳實踐參考
 
 ---
 
@@ -386,25 +439,250 @@ AI 生成修復建議，包含問題描述、修復步驟、範例代碼、工�
 
 ---
 
-## Epic 5: 報告生成與多版本對照
+## Epic 5: 多格式報告生成與多版本對照
 
-### Story 5.1: 設計報告生成架構
-支援多格式（HTML/JSON）和多版本（單一/對照）的報告架構。
+**背景說明**：此 Epic 實現多格式報告生成能力（HTML/JSON/Markdown/PDF），並支援多版本 OWASP 對照分析和報告查看 UI。
 
-### Story 5.2: 實現 HTML 報告生成 - 單版本
-生成包含統計、圖表、漏洞列表的 HTML 報告。
+**當前狀態**：🔄 進行中
+- ✅ Story 5.1: 報告生成架構（已完成，ReportGenerator 介面）
+- ✅ Story 5.2: HTML 報告生成（已完成，2025-10-20）
+- ✅ Story 5.3: JSON 報告生成（已完成，2025-10-20）
+- ⏳ Story 5.4: 多版本對照報告（待實作）
+- ✅ Story 5.5: 報告匯出功能（已完成，2025-10-20，支援 PDF/HTML/JSON/Markdown）
+- ⏳ Story 5.6: 報告查看 UI（待實作）
+- ✅ Story 5.7: Markdown 報告生成（已完成，MarkdownReportGenerator.java 存在）
 
-### Story 5.3: 實現 JSON 報告生成 - 單版本
-生成結構化的 JSON 格式報告，支援 API 整合。
+### Story 5.1: 設計報告生成架構 ✅
+支援多格式（PDF/HTML/JSON/Markdown）和多版本（單一/對照）的報告架構。
 
-### Story 5.4: 實現多版本對照報告
-並排顯示 2-3 個 OWASP 版本的對照報告，包含差異分析。
+**Acceptance Criteria**:
+- 建立 `ReportGenerator` 統一介面，定義 `generate()` 方法
+- 支援 `getFormat()` 和 `getFileExtension()` 方法
+- 各格式生成器實現介面，保持一致性
+- 報告資料模型（`AnalysisReport`, `SecurityFinding`, `ReportSummary`）定義完整
 
-### Story 5.5: 實現報告匯出功能
-用戶可下載 HTML 或 JSON 格式的報告檔案。
+**實作狀態**：已完成
+- `ReportGenerator` 介面已存在
+- 4 個格式生成器已實現（PDF/HTML/JSON/Markdown）
+- Builder 模式用於資料模型構建
 
-### Story 5.6: 設計報告查看 UI
-在 SonarQube 中展示報告，支援過濾、搜尋、詳情查看。
+### Story 5.2: 實現 HTML 報告生成 - 單版本 ✅
+生成包含統計、圖表、漏洞列表的響應式 HTML 報告。
+
+**Acceptance Criteria**:
+- 生成包含專案名稱、OWASP 版本、分析時間的元資料
+- 包含總發現數、嚴重性分布、OWASP 分類統計
+- 整合 Chart.js 4.4.0 實現互動式圖表（圓餅圖、長條圖）
+- 響應式設計，支援桌面和行動裝置（768px 斷點）
+- HTML 特殊字元正確轉義（&lt;, &gt;, &quot;, &amp;, &#39;）
+- 包含代碼片段和修復建議的詳細發現列表
+- 符合 WCAG 2.1 AA 無障礙標準
+
+**實作狀態**：已完成（2025-10-20）
+- 檔案：`HtmlReportGenerator.java` (435 行)
+- 測試：`HtmlReportGeneratorTest.java` (320 行，10 個測試案例)
+- 功能：Chart.js 整合、嵌入式 CSS、響應式設計、HTML 轉義
+- Commit: abceee5
+
+### Story 5.3: 實現 JSON 報告生成 - 單版本 ✅
+生成結構化的 JSON 格式報告，支援 API 整合和自動化處理。
+
+**Acceptance Criteria**:
+- 生成符合 RFC 8259 標準的 JSON 格式
+- 包含三層結構：metadata, summary, findings
+- 正確轉義 JSON 特殊字元（\", \\, \/, \n, \r, \t, \b, \f, 控制字元）
+- Map 鍵值按字母排序，確保輸出一致性
+- Null 值正確處理，可選欄位不存在時不輸出
+- 支援 CWE ID 陣列和嚴重性/分類統計
+
+**實作狀態**：已完成（2025-10-20）
+- 檔案：`JsonReportGenerator.java` (262 行)
+- 測試：`JsonReportGeneratorTest.java` (380 行，12 個測試案例)
+- 功能：手動 JSON 生成（零相依）、RFC 8259 合規、排序 Map
+- Commit: abceee5
+
+### Story 5.4: 實現多版本對照報告 ⏳
+並排顯示 2-3 個 OWASP 版本的對照報告，包含差異分析和類別映射。
+
+**Acceptance Criteria**:
+- **版本對照資料模型設計**：
+  - 建立 `VersionComparisonReport` 類別，包含多版本分析結果
+  - 建立 `CategoryMapping` 類別，定義版本間類別對應關係
+  - 建立 `DifferenceAnalysis` 類別，記錄跨版本差異
+  - 支援 2-3 個版本並排對照（2017 vs 2021, 2021 vs 2025, 2017 vs 2021 vs 2025）
+
+- **差異分析邏輯實作**：
+  - 實現 `VersionComparisonEngine` 服務
+  - 分析同一漏洞在不同版本的分類變化
+  - 識別新增、移除、重新分類的安全類別
+  - 計算版本間合規性差異百分比
+  - 提供版本遷移建議
+
+- **並排對照 HTML 報告生成**：
+  - 擴展 `HtmlReportGenerator` 支援多版本模式
+  - 實現並排表格，每個版本一列
+  - 差異部分高亮顯示（綠色：新增，紅色：移除，黃色：變更）
+  - 包含版本映射表（例：2017 A1 → 2021 A01）
+  - 包含跨版本統計比較圖表
+
+- **並排對照 JSON 報告生成**：
+  - 擴展 `JsonReportGenerator` 支援多版本模式
+  - JSON 結構包含 `versions` 陣列和 `comparison` 物件
+  - `comparison` 包含 `addedCategories`, `removedCategories`, `changedCategories`
+  - 每個漏洞包含 `versionMappings` 欄位
+
+**實作狀態**：待實作
+
+**技術設計建議**：
+```java
+// 資料模型範例
+public class VersionComparisonReport {
+    private List<String> owaspVersions;  // ["2017", "2021", "2025"]
+    private Map<String, AnalysisReport> versionReports;  // version → report
+    private DifferenceAnalysis differenceAnalysis;
+    private List<CategoryMapping> categoryMappings;
+}
+
+public class CategoryMapping {
+    private String sourceVersion;      // "2017"
+    private String sourceCategory;     // "A1"
+    private String targetVersion;      // "2021"
+    private String targetCategory;     // "A01"
+    private String mappingType;        // "DIRECT", "MERGED", "SPLIT", "NEW"
+    private String explanation;        // 說明映射原因
+}
+
+public class DifferenceAnalysis {
+    private Map<String, Integer> addedFindings;     // version → count
+    private Map<String, Integer> removedFindings;   // version → count
+    private Map<String, Integer> changedFindings;   // version → count
+    private double complianceChangePercent;         // 合規性變化百分比
+}
+```
+
+**驗收標準範例**：
+- 生成 2017 vs 2021 對照報告，正確顯示 A1 (Injection, 2017) → A03 (Injection, 2021)
+- 生成 2021 vs 2025 對照報告，標示新增和移除的類別
+- 差異分析準確計算跨版本變更百分比
+- HTML 報告中高亮顯示差異部分
+- JSON 報告包含完整的版本映射和差異資訊
+
+### Story 5.5: 實現報告匯出功能 ✅
+用戶可下載 PDF、HTML、JSON、Markdown 格式的報告檔案。
+
+**Acceptance Criteria**:
+- 擴展 `PdfReportApiController` 支援 4 種格式
+- API 端點：`/api/owasp/report/export?format=<format>&project=<key>`
+- `format` 參數支援：pdf, html, json, markdown
+- 正確設定 Content-Type 和 Content-Disposition 標頭
+- 檔案命名格式：`owasp-security-report-<project-key>.<ext>`
+- 支援跨來源資源共用（CORS）設定
+
+**實作狀態**：已完成（2025-10-20）
+- 檔案：`PdfReportApiController.java` (更新 +82 行)
+- 支援 4 種格式匯出（pdf, html, json, markdown）
+- Switch-case 路由機制
+- 正確的 HTTP 標頭和檔案命名
+- Commit: abceee5
+
+### Story 5.6: 實現報告查看 UI ⏳
+在 SonarQube Web UI 中展示報告，支援過濾、搜尋、詳情查看功能。
+
+**Acceptance Criteria**:
+- **整合 SonarQube Web UI 框架**：
+  - 建立 SonarQube Web Extension 頁面（`page.html`）
+  - 整合 SonarQube React UI 組件庫
+  - 註冊插件頁面於 SonarQube 導航選單
+  - 使用 SonarQube Web API 客戶端（`sonarqube-web-api`）
+  - 遵循 SonarQube UI 設計系統和配色方案
+
+- **過濾功能實作**：
+  - 依嚴重性過濾（BLOCKER, CRITICAL, MAJOR, MINOR, INFO）
+  - 依 OWASP 類別過濾（A01-A10 或 A1-A10）
+  - 依 CWE ID 過濾（下拉選單或多選）
+  - 依檔案路徑過濾（樹狀目錄選擇器）
+  - 支援多重過濾條件組合
+  - 過濾條件即時生效（無需重新載入）
+
+- **搜尋功能實作**：
+  - 全文搜尋漏洞描述和修復建議
+  - 搜尋規則名稱（ruleName）和規則鍵（ruleKey）
+  - 搜尋檔案路徑和代碼片段
+  - 支援模糊搜尋和正則表達式搜尋
+  - 搜尋結果高亮顯示匹配文字
+  - 搜尋框自動完成建議
+
+- **詳情查看功能實作**：
+  - 點擊漏洞項目展開詳情面板
+  - 顯示完整的漏洞描述和影響分析
+  - 顯示代碼片段（syntax highlighting）
+  - 顯示 AI 生成的修復建議（Before/After 對照）
+  - 顯示 CWE 映射和 OWASP 分類
+  - 提供「複製代碼」和「匯出此項」功能
+  - 支援鍵盤導航（方向鍵、Enter、Esc）
+
+- **響應式設計與易用性**：
+  - 響應式佈局，支援桌面（≥1280px）和平板（768-1279px）
+  - 頁面載入 < 2 秒，互動響應 < 100ms
+  - 包含空狀態提示（無發現時顯示友善訊息）
+  - 包含載入指示器和錯誤處理提示
+  - 支援分頁或虛擬滾動（處理大量發現）
+
+**實作狀態**：待實作
+
+**技術設計建議**：
+```javascript
+// React 組件架構範例
+// ReportViewerPage.jsx - 主頁面
+// - FilterPanel.jsx - 過濾面板（嚴重性、類別、CWE、檔案）
+// - SearchBar.jsx - 搜尋列（全文、自動完成）
+// - FindingsList.jsx - 漏洞列表（卡片式、分頁）
+//   - FindingCard.jsx - 單一漏洞卡片（可展開）
+//     - FindingDetails.jsx - 詳情面板（代碼、修復建議）
+// - Pagination.jsx - 分頁控制
+// - EmptyState.jsx - 空狀態提示
+
+// API 整合範例
+import { getJSON } from 'sonarqube-web-api';
+
+const fetchFindings = async (projectKey, filters) => {
+  const response = await getJSON('/api/owasp/report/findings', {
+    project: projectKey,
+    severity: filters.severity,
+    category: filters.category,
+    cwe: filters.cwe,
+    search: filters.searchQuery
+  });
+  return response.findings;
+};
+```
+
+**驗收標準範例**：
+- 在 SonarQube 專案頁面顯示「OWASP Security Report」選項
+- 過濾器正確篩選發現（例：只顯示 CRITICAL 嚴重性）
+- 搜尋框輸入「SQL Injection」正確高亮匹配結果
+- 點擊漏洞卡片展開詳情，顯示完整代碼片段和修復建議
+- 平板裝置上佈局正確調整，所有功能可用
+- 1000 個發現的專案，頁面載入和互動仍流暢
+
+### Story 5.7: 實現 Markdown 報告生成 ✅
+生成易讀的 Markdown 格式報告，支援 Git 整合和版本控制。
+
+**Acceptance Criteria**:
+- 生成符合 CommonMark 規範的 Markdown 格式
+- 包含標題、表格、列表、代碼區塊
+- 元資料區塊（專案名稱、OWASP 版本、分析時間）
+- 摘要統計表格（總發現數、嚴重性分布）
+- 嚴重性分布和 OWASP 分類分布（表格或清單）
+- 詳細發現列表（標題、描述、檔案位置、代碼片段、修復建議）
+- Markdown 特殊字元正確轉義（`*`, `_`, `[`, `]`, `#`, 等）
+- 可選的 TOC（Table of Contents）自動生成
+
+**實作狀態**：已完成
+- 檔案：`MarkdownReportGenerator.java` (230 行，已存在）
+- 測試：需補充完整測試案例
+- 功能：標題結構、表格、代碼區塊、Markdown 轉義
+- 已整合至 `PdfReportApiController.java` 匯出功能
 
 ---
 
