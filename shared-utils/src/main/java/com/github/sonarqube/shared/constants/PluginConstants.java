@@ -56,13 +56,67 @@ public final class PluginConstants {
     // AI 供應商
     // ============================================================
     public enum AiProvider {
-        OPENAI("openai", "OpenAI"),
-        ANTHROPIC("anthropic", "Anthropic Claude");
+        // API 模式 Providers
+        OPENAI("openai", "OpenAI", AiExecutionMode.API),
+        ANTHROPIC("anthropic", "Anthropic Claude", AiExecutionMode.API),
+        GEMINI_API("gemini-api", "Google Gemini API", AiExecutionMode.API),
+
+        // CLI 模式 Providers
+        GEMINI_CLI("gemini-cli", "Google Gemini CLI", AiExecutionMode.CLI),
+        COPILOT_CLI("copilot-cli", "GitHub Copilot CLI", AiExecutionMode.CLI),
+        CLAUDE_CLI("claude-cli", "Claude Code CLI", AiExecutionMode.CLI);
+
+        private final String code;
+        private final String displayName;
+        private final AiExecutionMode defaultExecutionMode;
+
+        AiProvider(String code, String displayName, AiExecutionMode defaultExecutionMode) {
+            this.code = code;
+            this.displayName = displayName;
+            this.defaultExecutionMode = defaultExecutionMode;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public AiExecutionMode getDefaultExecutionMode() {
+            return defaultExecutionMode;
+        }
+
+        public boolean isApiMode() {
+            return defaultExecutionMode == AiExecutionMode.API;
+        }
+
+        public boolean isCliMode() {
+            return defaultExecutionMode == AiExecutionMode.CLI;
+        }
+
+        public static AiProvider fromCode(String code) {
+            for (AiProvider provider : values()) {
+                if (provider.code.equalsIgnoreCase(code)) {
+                    return provider;
+                }
+            }
+            throw new IllegalArgumentException("Unknown AI provider: " + code);
+        }
+    }
+
+    // ============================================================
+    // AI 執行模式
+    // ============================================================
+    public enum AiExecutionMode {
+        API("api", "API 模式"),
+        CLI("cli", "CLI 模式");
 
         private final String code;
         private final String displayName;
 
-        AiProvider(String code, String displayName) {
+        AiExecutionMode(String code, String displayName) {
             this.code = code;
             this.displayName = displayName;
         }
@@ -75,13 +129,13 @@ public final class PluginConstants {
             return displayName;
         }
 
-        public static AiProvider fromCode(String code) {
-            for (AiProvider provider : values()) {
-                if (provider.code.equalsIgnoreCase(code)) {
-                    return provider;
+        public static AiExecutionMode fromCode(String code) {
+            for (AiExecutionMode mode : values()) {
+                if (mode.code.equalsIgnoreCase(code)) {
+                    return mode;
                 }
             }
-            throw new IllegalArgumentException("Unknown AI provider: " + code);
+            return API; // 預設為 API 模式
         }
     }
 
