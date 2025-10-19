@@ -18,11 +18,19 @@
   - **雙模式架構**: API 與 CLI 模式無縫切換，成本與效能彈性最大化
   - **智慧路徑偵測**: 自動識別 CLI 工具類型，降低配置複雜度
   - **6 種 Provider 自由選擇**: 降低供應商依賴風險，成本優化彈性
+- **完整 AI 整合架構** ✅ **(Epic 2 完成)**：
+  - **統一抽象介面**: AiService 支援所有 AI Provider（OpenAI, Claude, Gemini）
+  - **HTTP API 整合**: OkHttp 3.14.9 + Jackson JSON 序列化
+  - **智能快取機制**: Caffeine Cache 3.1.8，LRU eviction，預設 TTL 1 小時
+  - **自動重試**: 指數退避（1s → 2s → 4s），最多 3 次重試
+  - **雙格式解析**: JSON 結構化 + Regex 非結構化 fallback
+  - **錯誤分類**: INVALID_API_KEY, RATE_LIMIT_EXCEEDED, TIMEOUT, NETWORK_ERROR
 - 理解代碼語義，減少 **40-60% 誤報率**
 - 智能修復建議包含：
   - 詳細描述與修復步驟
-  - 範例代碼
-  - 工作量評估（修復時間減少 **50-75%**）
+  - Before/After 範例代碼
+  - 工作量評估（Simple: 0.5-1h, Medium: 2-4h, Complex: 4-8h）
+  - 修復時間減少 **50-75%**
 
 ### 🛡️ 多版本 OWASP 支援
 - **OWASP Top 10 2017**（10 個類別）
