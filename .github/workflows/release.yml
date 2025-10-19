@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 觸發條件：推送版本標籤如 v1.0.0
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "📌 Release version: $VERSION"
+
+      - name: Update POM version
+        run: |
+          mvn versions:set -DnewVersion=${{ steps.version.outputs.VERSION }} -B
+          mvn versions:commit -B
+
+      - name: Build and Package
+        run: mvn clean package -DskipTests -B
+
+      - name: Run Tests
+        run: mvn test -B
+
+      - name: Generate Checksums
+        run: |
+          cd plugin-core/target
+          sha256sum sonar-aiowasp-plugin-*.jar > checksums.txt
+          cat checksums.txt
+
+      - name: Create Release Notes
+        id: release_notes
+        run: |
+          cat > RELEASE_NOTES.md <<EOF
+          ## SonarQube AI OWASP Security Plugin v${{ steps.version.outputs.VERSION }}
+
+          ### 🎉 新功能
+          - AI 驅動的 OWASP 安全分析
+          - 支援 OWASP Top 10 2017、2021、2025（預覽版）
+          - 智能修復建議與工作量評估
+          - 並行分析與智能快取
+          - HTML/JSON 多版本對照報告
+
+          ### 📋 系統需求
+          - SonarQube: ≥ 9.9 LTS
+          - Java: 11+
+          - Maven: 3.8+
+
+          ### 📦 安裝方式
+          1. 下載 \`sonar-aiowasp-plugin-${{ steps.version.outputs.VERSION }}.jar\`
+          2. 複製至 SonarQube 的 \`extensions/plugins\` 目錄
+          3. 重啟 SonarQube
+
+          ### 🔐 Checksums
+          \`\`\`
+          $(cat plugin-core/target/checksums.txt)
+          \`\`\`
+
+          ### 📚 文件
+          - [使用手冊](docs/USER_GUIDE.md)
+          - [架構文件](docs/architecture.md)
+          - [UX 規格](docs/ux-specification.md)
+
+          完整變更紀錄請參閱 [CHANGELOG.md](CHANGELOG.md)
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release v${{ steps.version.outputs.VERSION }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'alpha') }}
+          files: |
+            plugin-core/target/sonar-aiowasp-plugin-*.jar
+            plugin-core/target/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to SonarQube Marketplace (Optional)
+        if: ${{ !contains(steps.version.outputs.VERSION, 'beta') && !contains(steps.version.outputs.VERSION, 'alpha') }}
+        run: |
+          echo "📤 正式版本可上傳至 SonarQube Marketplace"
+          echo "   請手動提交至: https://community.sonarsource.com/c/plugins/"
