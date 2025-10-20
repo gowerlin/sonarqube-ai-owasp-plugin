@@ -7,7 +7,7 @@
 
 .DESCRIPTION
     此腳本執行以下步驟：
-    1. 使用 Maven Docker 容器建置插件
+    1. 使用本機 Maven 建置插件
     2. 複製插件 JAR 至 SonarQube 插件目錄
     3. 顯示部署結果和下一步操作建議
 
@@ -94,12 +94,22 @@ Write-Header "SonarQube AI OWASP Plugin - 快速建置與部署"
 # 步驟 1: 檢查環境
 Write-Step "步驟 1/4: 檢查環境..."
 
-# 檢查 Docker
+# 檢查 Maven
 try {
-    $dockerVersion = docker --version
-    Write-Success "Docker 已安裝: $dockerVersion"
+    $mavenVersion = mvn --version | Select-Object -First 1
+    Write-Success "Maven 已安裝: $mavenVersion"
 } catch {
-    Write-Error "Docker 未安裝或未啟動，請先安裝 Docker Desktop"
+    Write-Error "Maven 未安裝或未設定環境變數，請先安裝 Maven 3.9+"
+    Write-Info "安裝指引：https://maven.apache.org/install.html"
+    exit 1
+}
+
+# 檢查 Java
+try {
+    $javaVersion = java -version 2>&1 | Select-Object -First 1
+    Write-Success "Java 已安裝: $javaVersion"
+} catch {
+    Write-Error "Java 未安裝或未設定環境變數，請先安裝 JDK 11+"
     exit 1
 }
 
@@ -126,17 +136,20 @@ if ($SkipTests) {
 $mavenCommand += " -q"  # Quiet mode
 
 Write-Info "建置指令: $mavenCommand"
+Write-Info "工作目錄: $WORKSPACE_DIR"
 Write-Info "這可能需要幾分鐘時間（首次建置會下載依賴）..."
 
 try {
     $buildStartTime = Get-Date
 
-    # 使用 Docker Maven 容器建置
-    docker run --rm `
-        -v "${WORKSPACE_DIR}:/workspace" `
-        -w /workspace `
-        maven:3.9-eclipse-temurin-11 `
-        $mavenCommand
+    # 使用本機 Maven 建置
+    Push-Location $WORKSPACE_DIR
+    Invoke-Expression $mavenCommand
+    Pop-Location
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Maven 建置失敗，退出碼: $LASTEXITCODE"
+    }
 
     $buildEndTime = Get-Date
     $buildDuration = ($buildEndTime - $buildStartTime).TotalSeconds
@@ -145,6 +158,7 @@ try {
 } catch {
     Write-Error "Maven 建置失敗"
     Write-Host $_.Exception.Message -ForegroundColor Red
+    Pop-Location
     exit 1
 }
 
