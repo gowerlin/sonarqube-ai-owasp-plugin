@@ -10,8 +10,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### 🚧 Work in Progress
-- Epic 5: Story 5.4 多版本對照報告（規劃中）
 - Epic 5: Story 5.6 報告查看 UI（規劃中）
+
+### ✨ Added - Epic 5: Story 5.4 多版本對照報告 ✅ (已完成)
+
+#### Story 5.4: 多版本對照報告 ✅ (2025-10-20)
+**成就**：完整實現多版本 OWASP 對照報告，支援差異分析、類別映射、HTML/JSON 雙格式生成
+
+- **VersionComparisonReport 資料模型** (180 行)
+  - 多版本分析結果封裝 (owaspVersions, versionReports)
+  - `DifferenceAnalysis` 內部類別：
+    - addedFindings: 新增發現統計 (版本 → 數量)
+    - removedFindings: 移除發現統計
+    - changedFindings: 變更分類統計
+    - complianceChangePercent: 合規性變化百分比
+    - migrationRecommendations: 智能遷移建議列表
+  - `CategoryMapping` 整合 (來自 OwaspVersionMappingService)
+  - Builder 模式支援流暢構建
+  - 不可變資料結構 (Collections.unmodifiableList/Map)
+  - 提交：`742bd63`
+
+- **VersionComparisonEngine 差異分析引擎** (200 行)
+  - `createComparisonReport()` 建立完整對照報告
+  - `analyzeDifferences()` 自動分析版本間差異
+  - 差異計算方法：
+    - calculateAddedFindings(): 識別新版本新增的安全發現
+    - calculateRemovedFindings(): 識別被移除的安全發現
+    - calculateChangedFindings(): 識別重新分類的安全發現
+    - calculateComplianceChange(): 計算合規性變化百分比
+  - `generateMigrationRecommendations()` 智能建議生成：
+    - 通用建議：新增發現優先處理、重新分類檢查
+    - 2017 → 2021 特定建議：
+      * XSS (A7:2017) 合併至 Injection (A03:2021)
+      * 新增 Insecure Design (A04) 和 SSRF (A10)
+      * Broken Access Control 升至第一位
+  - 整合 OwaspVersionMappingService 獲取映射關係
+  - 提交：`742bd63`
+
+- **VersionComparisonJsonGenerator** (220 行)
+  - 生成結構化 JSON 版本對照報告
+  - JSON 結構設計：
+    ```json
+    {
+      "metadata": {
+        "projectKey": "...",
+        "reportType": "version-comparison",
+        "analysisTimestamp": "...",
+        "versionsCompared": 2
+      },
+      "versions": ["2017", "2021"],
+      "versionReports": {
+        "2017": { "owaspVersion": "2017", "totalFindings": 50, ... },
+        "2021": { "owaspVersion": "2021", "totalFindings": 48, ... }
+      },
+      "comparison": {
+        "addedFindings": { "2021": 5 },
+        "removedFindings": { "2021": 7 },
+        "changedFindings": { "2021": 3 },
+        "complianceChangePercent": { "2021": -4.00 },
+        "migrationRecommendations": [ ... ]
+      },
+      "categoryMappings": [ ... ]
+    }
+    ```
+  - 完整 JSON 特殊字元轉義 (\\, \", \n, \r, \t, \b, \f)
+  - 支援 null 值處理 (新增類別的 targetVersion)
+  - 提交：`742bd63`
+
+- **VersionComparisonHtmlGenerator** (240 行)
+  - 生成響應式 HTML 版本對照報告
+  - 差異視覺化高亮：
+    - 綠色背景 (.added): 新增發現
+    - 紅色背景 (.removed): 移除發現
+    - 黃色背景 (.changed): 變更分類
+  - 類別映射視覺化：
+    - 綠色文字 (.mapping-direct): 直接映射
+    - 黃色文字 (.mapping-merged): 合併映射
+    - 藍色文字 (.mapping-new): 新增類別
+  - 並排表格顯示：
+    - 版本摘要對照 (總發現數、嚴重性分布)
+    - 類別映射關係 (來源 → 目標)
+  - 遷移建議區塊 (藍色邊框提示)
+  - 嵌入式 CSS 樣式 (響應式設計)
+  - 提交：`742bd63`
+
+### 📊 Story 5.4 統計數據
+- **程式碼總量**: ~870 行
+  - VersionComparisonReport: 180 行
+  - VersionComparisonEngine: 200 行
+  - VersionComparisonJsonGenerator: 220 行
+  - VersionComparisonHtmlGenerator: 240 行
+  - 測試程式碼: 30 行 (基礎測試)
+- **支援版本對照**: 2-3 個版本並排 (2017 vs 2021, 2021 vs 2025, 2017 vs 2021 vs 2025)
+- **差異分析維度**: 4 個 (added, removed, changed, complianceChangePercent)
+- **報告格式**: HTML, JSON (雙格式)
+- **Git 提交**: 1 次提交 (`742bd63`, 870 行)
+
+### 🏗️ 技術亮點
+- **Builder 模式**: VersionComparisonReport 與 DifferenceAnalysis 流暢構建
+- **不可變資料結構**: Collections.unmodifiable* 保證資料安全
+- **智能差異分析**: 自動識別新增/移除/變更發現
+- **視覺化高亮**: HTML 報告差異部分顏色區分
+- **版本映射整合**: 利用 Epic 4 OwaspVersionMappingService
+- **智能建議生成**: 版本特定遷移建議 (2017 → 2021)
+
+### 📚 Integration
+- **Epic 4 整合**: 使用 OwaspVersionManager 和 OwaspVersionMappingService
+- **Epic 3 整合**: 支援 OWASP 2021 規則引擎分析結果
+- **Epic 5 整合**: 擴展現有報告生成架構 (ReportGenerator)
 
 ### ✨ Added - Epic 4: OWASP 2017 規則引擎與版本管理 ✅ (已完成)
 
