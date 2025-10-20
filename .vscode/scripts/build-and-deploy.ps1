@@ -91,6 +91,10 @@ function Write-Step {
 
 Write-Header "SonarQube AI OWASP Plugin - 快速建置與部署"
 
+# 強制使用 Java 17（專案需求）
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
+$env:PATH = "C:\Program Files\Java\jdk-17\bin;" + $env:PATH
+
 # 步驟 1: 檢查環境
 Write-Step "步驟 1/4: 檢查環境..."
 
@@ -104,12 +108,18 @@ try {
     exit 1
 }
 
-# 檢查 Java
+# 檢查 Java（專案需要 Java 17）
 try {
     $javaVersion = java -version 2>&1 | Select-Object -First 1
-    Write-Success "Java 已安裝: $javaVersion"
+    Write-Success "Java 版本: $javaVersion"
+
+    if ($javaVersion -notlike "*17.*") {
+        Write-Warning "專案需要 Java 17，當前使用: $javaVersion"
+        Write-Info "已強制設定為使用: C:\Program Files\Java\jdk-17"
+    }
 } catch {
-    Write-Error "Java 未安裝或未設定環境變數，請先安裝 JDK 11+"
+    Write-Error "Java 未安裝或未設定環境變數，請先安裝 JDK 17"
+    Write-Info "下載位置：https://www.oracle.com/java/technologies/downloads/#java17"
     exit 1
 }
 
@@ -125,18 +135,20 @@ if (-not (Test-Path $SONARQUBE_PLUGINS_DIR)) {
 # 步驟 2: Maven 建置
 Write-Step "步驟 2/4: Maven 建置插件..."
 
-$mavenCommand = "mvn"
+$mavenArgs = @()
 if ($CleanBuild) {
-    $mavenCommand += " clean"
+    $mavenArgs += "clean"
 }
-$mavenCommand += " package"
+$mavenArgs += "package"
 if ($SkipTests) {
-    $mavenCommand += " -DskipTests"
+    # 使用 maven.test.skip=true 來完全跳過測試編譯和執行
+    $mavenArgs += "-Dmaven.test.skip=true"
 }
-$mavenCommand += " -q"  # Quiet mode
+$mavenArgs += "-q"  # Quiet mode
 
-Write-Info "建置指令: $mavenCommand"
+Write-Info "建置指令: mvn $($mavenArgs -join ' ')"
 Write-Info "工作目錄: $WORKSPACE_DIR"
+Write-Info "Java 版本: Java 17"
 Write-Info "這可能需要幾分鐘時間（首次建置會下載依賴）..."
 
 try {
@@ -144,7 +156,7 @@ try {
 
     # 使用本機 Maven 建置
     Push-Location $WORKSPACE_DIR
-    Invoke-Expression $mavenCommand
+    & mvn $mavenArgs
     Pop-Location
 
     if ($LASTEXITCODE -ne 0) {
@@ -226,13 +238,9 @@ Write-Host ""
 
 Write-Host "📋 下一步操作：" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "  1. 重啟 SonarQube 以載入新插件" -ForegroundColor White
-Write-Host "     方法一（Docker）：" -ForegroundColor Gray
-Write-Host "       docker-compose restart sonarqube" -ForegroundColor Cyan
-Write-Host "       或使用 VSCode Task: 'Restart SonarQube (Docker)'" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "     方法二（本地 SonarQube）：" -ForegroundColor Gray
-Write-Host "       停止並重啟 SonarQube 服務" -ForegroundColor Cyan
+Write-Host "  1. 重啟本機 SonarQube 以載入新插件" -ForegroundColor White
+Write-Host "     執行 VSCode Task: '🔄 Restart SonarQube'" -ForegroundColor Cyan
+Write-Host "     或手動執行: E:\sonarqube-community-25.10.0.114319\bin\windows-x86-64\StartSonar.bat" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  2. 訪問 SonarQube: http://localhost:9000" -ForegroundColor White
 Write-Host "     預設帳號：admin / admin" -ForegroundColor Gray
@@ -252,10 +260,23 @@ Write-Host ""
 
 # 詢問是否重啟 SonarQube（僅在互動模式下）
 if ($Host.UI.RawUI) {
-    $response = Read-Host "是否立即重啟 SonarQube Docker 容器？(y/N)"
+    $response = Read-Host "是否立即重啟本機 SonarQube？(y/N)"
     if ($response -eq 'y' -or $response -eq 'Y') {
-        Write-Info "重啟 SonarQube..."
-        docker-compose -f (Join-Path $WORKSPACE_DIR "docker-compose.yml") restart sonarqube
-        Write-Success "SonarQube 正在重啟，請稍候 15-30 秒後訪問 http://localhost:9000"
+        Write-Info "停止 SonarQube..."
+        $sonarProc = Get-Process | Where-Object { $_.ProcessName -eq 'java' -and $_.CommandLine -like '*sonar*' }
+        if ($sonarProc) {
+            $sonarProc | Stop-Process -Force
+            Write-Info "已停止 SonarQube 進程"
+            Start-Sleep -Seconds 3
+        }
+
+        Write-Info "啟動 SonarQube..."
+        $sonarPath = 'E:/sonarqube-community-25.10.0.114319/bin/windows-x86-64/StartSonar.bat'
+        if (Test-Path $sonarPath) {
+            Start-Process -FilePath $sonarPath -WorkingDirectory 'E:/sonarqube-community-25.10.0.114319/bin/windows-x86-64'
+            Write-Success "SonarQube 正在啟動，請稍候 30-60 秒後訪問 http://localhost:9000"
+        } else {
+            Write-Error "找不到 SonarQube 啟動腳本: $sonarPath"
+        }
     }
 }
