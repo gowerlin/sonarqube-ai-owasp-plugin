@@ -31,6 +31,8 @@
             <groupId>com.github.sonarqube</groupId>
             <artifactId>ai-connector</artifactId>
         </dependency>
+        <!-- OWASP 版本模組 - 預留架構，目前實作於 plugin-core 內部 -->
+        <!--
         <dependency>
             <groupId>com.github.sonarqube</groupId>
             <artifactId>owasp2017</artifactId>
@@ -43,6 +45,7 @@
             <groupId>com.github.sonarqube</groupId>
             <artifactId>owasp2025</artifactId>
         </dependency>
+        -->
         <dependency>
             <groupId>com.github.sonarqube</groupId>
             <artifactId>version-manager</artifactId>

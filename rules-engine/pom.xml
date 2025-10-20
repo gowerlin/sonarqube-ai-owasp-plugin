@@ -17,11 +17,14 @@
     <name>Rules Engine</name>
     <description>OWASP 規則引擎父模組</description>
 
+    <!-- 子模組已移至 plugin-core，此處保留為預留架構 -->
+    <!--
     <modules>
         <module>owasp2017</module>
         <module>owasp2021</module>
         <module>owasp2025</module>
     </modules>
+    -->
 
     <dependencies>
         <!-- 內部依賴 -->

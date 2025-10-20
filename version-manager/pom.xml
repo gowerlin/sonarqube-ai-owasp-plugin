@@ -23,10 +23,7 @@
             <groupId>com.github.sonarqube</groupId>
             <artifactId>shared-utils</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.github.sonarqube</groupId>
-            <artifactId>config-manager</artifactId>
-        </dependency>
+        <!-- Note: config-manager 依賴 version-manager，所以此處不能反向依賴以避免循環 -->
 
         <!-- SonarQube Plugin API -->
         <dependency>

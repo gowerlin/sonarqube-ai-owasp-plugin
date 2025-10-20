@@ -16,13 +16,13 @@
     <url>https://github.com/your-org/sonarqube-ai-owasp-plugin</url>
     <inceptionYear>2025</inceptionYear>
 
-    <!-- 子模組清單 -->
+    <!-- 子模組清單 - 按照依賴順序排列 -->
     <modules>
         <module>shared-utils</module>
+        <module>version-manager</module>
         <module>config-manager</module>
         <module>ai-connector</module>
         <module>rules-engine</module>
-        <module>version-manager</module>
         <module>report-generator</module>
         <module>plugin-core</module>
     </modules>
@@ -32,13 +32,13 @@
         <!-- 編碼與 Java 版本 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
 
         <!-- SonarQube Plugin API -->
         <sonarqube.version>9.9.0.65466</sonarqube.version>
-        <sonar-plugin-api.version>9.17.0.3660</sonar-plugin-api.version>
+        <sonar-plugin-api.version>9.17.0.587</sonar-plugin-api.version>
 
         <!-- 第三方程式庫版本 -->
         <slf4j.version>2.0.9</slf4j.version>

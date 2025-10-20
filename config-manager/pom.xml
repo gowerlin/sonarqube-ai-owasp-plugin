@@ -23,6 +23,10 @@
             <groupId>com.github.sonarqube</groupId>
             <artifactId>shared-utils</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>version-manager</artifactId>
+        </dependency>
 
         <!-- SonarQube Plugin API -->
         <dependency>
