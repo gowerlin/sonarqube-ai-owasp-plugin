@@ -447,7 +447,7 @@ AI 生成修復建議，包含問題描述、修復步驟、範例代碼、工�
 - ✅ Story 5.1: 報告生成架構（已完成，ReportGenerator 介面）
 - ✅ Story 5.2: HTML 報告生成（已完成，2025-10-20）
 - ✅ Story 5.3: JSON 報告生成（已完成，2025-10-20）
-- ⏳ Story 5.4: 多版本對照報告（待實作）
+- ✅ Story 5.4: 多版本對照報告（已完成，2025-10-20，4 個核心元件）
 - ✅ Story 5.5: 報告匯出功能（已完成，2025-10-20，支援 PDF/HTML/JSON/Markdown）
 - ⏳ Story 5.6: 報告查看 UI（待實作）
 - ✅ Story 5.7: Markdown 報告生成（已完成，MarkdownReportGenerator.java 存在）
@@ -531,7 +531,14 @@ AI 生成修復建議，包含問題描述、修復步驟、範例代碼、工�
   - `comparison` 包含 `addedCategories`, `removedCategories`, `changedCategories`
   - 每個漏洞包含 `versionMappings` 欄位
 
-**實作狀態**：待實作
+**實作狀態**：已完成（2025-10-20）
+- 檔案：
+  - `VersionComparisonReport.java` (180 行) - 多版本對照資料模型
+  - `VersionComparisonEngine.java` (200 行) - 差異分析引擎
+  - `VersionComparisonJsonGenerator.java` (220 行) - JSON 格式生成器
+  - `VersionComparisonHtmlGenerator.java` (240 行) - HTML 格式生成器
+- 功能：Builder 模式、自動差異計算、智慧遷移建議、雙格式輸出
+- Commit: 742bd63
 
 **技術設計建議**：
 ```java
