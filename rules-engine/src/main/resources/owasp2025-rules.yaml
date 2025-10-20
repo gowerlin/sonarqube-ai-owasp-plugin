@@ -1,0 +1,272 @@
+# OWASP Top 10 2025 規則配置檔案 (Preview)
+#
+# 用途：
+# - 當 OWASP 2025 正式發布時，可透過此配置檔快速更新規則，無需重新編譯插件
+# - 支援規則啟用/停用、嚴重性調整、CWE 映射更新
+#
+# 配置檔版本：1.0 (Preview)
+# 最後更新：2025-10-20
+# 基於：OWASP 社群預測、安全趨勢分析
+# 狀態：Preview（等待 OWASP 2025 官方發布於 2025年11月）
+
+owasp_version: "2025"
+status: "preview"  # preview | stable | deprecated
+last_updated: "2025-10-20"
+
+# 全域預設設定
+defaults:
+  enabled: true
+  severity: "MAJOR"
+  requires_ai: false
+
+# OWASP 2025 規則列表
+rules:
+  # A01: Broken Access Control (保持第一)
+  - rule_id: "owasp-2025-a01-001"
+    category: "A01"
+    name: "Broken Access Control Detection"
+    description: "Detects broken access control vulnerabilities including API authorization bypass, cloud IAM misconfigurations, and microservice authentication failures."
+    enabled: true
+    severity: "CRITICAL"
+    requires_ai: true
+    cwe_ids:
+      - "CWE-22"   # Path Traversal
+      - "CWE-284"  # Improper Access Control
+      - "CWE-639"  # Authorization Bypass
+      - "CWE-862"  # Missing Authorization
+      - "CWE-863"  # Incorrect Authorization
+      - "CWE-1270" # Generation of Incorrect Security Identifiers (2025 新增)
+      - "CWE-1390" # Weak Authentication (2025 新增)
+    preview_features:
+      - "API Authorization Bypass Detection"
+      - "GraphQL Authorization Missing"
+      - "Cloud IAM Misconfiguration (AWS/Azure/GCP)"
+      - "Microservice Authentication Missing"
+
+  # A02: Cryptographic Failures (保持第二)
+  - rule_id: "owasp-2025-a02-001"
+    category: "A02"
+    name: "Cryptographic Failures Detection"
+    description: "Detects cryptographic failures including weak algorithms, hardcoded secrets, and post-quantum readiness issues."
+    enabled: true
+    severity: "HIGH"
+    requires_ai: false
+    cwe_ids:
+      - "CWE-327"  # Weak Crypto
+      - "CWE-330"  # Insecure Random
+      - "CWE-798"  # Hardcoded Credentials
+    preview_features:
+      - "Post-Quantum Cryptography Readiness Check"
+      - "Cloud KMS Misconfiguration Detection"
+      - "TLS 1.3 Enforcement Check"
+
+  # A03: Injection (保持第三，擴展包含 Prompt Injection)
+  - rule_id: "owasp-2025-a03-prompt-injection"
+    category: "A03"
+    name: "Prompt Injection Vulnerabilities Detection"
+    description: "Detects AI/LLM prompt injection attacks including direct injection, system prompt bypass, excessive agency, and training data poisoning."
+    enabled: true
+    severity: "CRITICAL"
+    requires_ai: true
+    cwe_ids:
+      - "CWE-1236" # Improper Neutralization of Formula Elements
+      - "CWE-20"   # Improper Input Validation
+      - "CWE-74"   # Improper Neutralization of Special Elements
+      - "CWE-77"   # Improper Neutralization of Command Elements
+      - "CWE-94"   # Improper Control of Generation of Code
+    preview_features:
+      - "Direct Prompt Injection Detection"
+      - "System Prompt Bypass Detection"
+      - "Excessive Agency Detection (LLM with System Command Access)"
+      - "Training Data Poisoning Detection"
+    references:
+      - "OWASP Top 10 for LLM Applications 2025"
+      - "https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+
+  - rule_id: "owasp-2025-a03-sql-injection"
+    category: "A03"
+    name: "SQL Injection Detection"
+    description: "Detects SQL injection vulnerabilities."
+    enabled: true
+    severity: "CRITICAL"
+    requires_ai: true
+    cwe_ids:
+      - "CWE-89"
+
+  # A04: Insecure Design (保持第四)
+  - rule_id: "owasp-2025-a04-001"
+    category: "A04"
+    name: "Insecure Design Detection"
+    description: "Detects insecure design patterns including lack of threat modeling, unsafe business logic, and AI/ML model design flaws."
+    enabled: true
+    severity: "MEDIUM"
+    requires_ai: true
+    cwe_ids:
+      - "CWE-73"
+      - "CWE-434"
+      - "CWE-841"
+    preview_features:
+      - "AI/ML Model Design Flaws Detection"
+      - "Zero Trust Architecture Compliance Check"
+      - "Privacy by Design Validation (GDPR/CCPA)"
+
+  # A05: Security Misconfiguration (保持第五)
+  - rule_id: "owasp-2025-a05-001"
+    category: "A05"
+    name: "Security Misconfiguration Detection"
+    description: "Detects security misconfigurations including cloud config errors, container security issues, and CORS misconfigurations."
+    enabled: true
+    severity: "HIGH"
+    requires_ai: false
+    cwe_ids:
+      - "CWE-2"
+      - "CWE-16"
+      - "CWE-489"
+    preview_features:
+      - "Cloud Configuration Error Detection (AWS/Azure/GCP)"
+      - "Container Security (Docker/Kubernetes)"
+      - "CORS Misconfiguration Detection"
+
+  # A06: Vulnerable and Outdated Components (擴展為供應鏈攻擊)
+  - rule_id: "owasp-2025-a06-001"
+    category: "A06"
+    name: "Software Supply Chain Attack Detection"
+    description: "Detects software supply chain vulnerabilities including malicious packages, dependency confusion, CI/CD pipeline attacks, and missing artifact signatures."
+    enabled: true
+    severity: "HIGH"
+    requires_ai: false
+    cwe_ids:
+      - "CWE-1035"  # 2013 Software Development
+      - "CWE-1104"  # Untrusted Pointer Dereference
+      - "CWE-1329"  # Reliance on Uncontrolled Component (2025 新增)
+      - "CWE-1395"  # Dependency on Vulnerable Third-Party Component (2025 新增)
+    preview_features:
+      - "Malicious Package Detection (npm/PyPI Typosquatting)"
+      - "Dependency Confusion Attack Detection"
+      - "CI/CD Pipeline Attack Detection"
+      - "Artifact Signature Verification (Sigstore/cosign)"
+      - "SBOM (Software Bill of Materials) Validation"
+
+  # A07: Identification and Authentication Failures (保持第七)
+  - rule_id: "owasp-2025-a07-001"
+    category: "A07"
+    name: "Authentication Failures Detection"
+    description: "Detects authentication failures including weak password policies, missing MFA, and Passkey/WebAuthn readiness."
+    enabled: true
+    severity: "CRITICAL"
+    requires_ai: false
+    cwe_ids:
+      - "CWE-287"
+      - "CWE-306"
+      - "CWE-384"
+    preview_features:
+      - "Passkey/WebAuthn Implementation Check"
+      - "OAuth 2.1/OIDC Security Compliance"
+      - "Biometric Authentication Security Validation"
+
+  # A08: Software and Data Integrity Failures (保持第八)
+  - rule_id: "owasp-2025-a08-001"
+    category: "A08"
+    name: "Data Integrity Failures Detection"
+    description: "Detects data integrity failures including unsafe deserialization, CI/CD pipeline vulnerabilities, and missing artifact signatures."
+    enabled: true
+    severity: "HIGH"
+    requires_ai: false
+    cwe_ids:
+      - "CWE-502"
+      - "CWE-494"
+      - "CWE-829"
+    preview_features:
+      - "Artifact Signature Verification"
+      - "SBOM Requirement Validation"
+      - "Container Image Signature Check (Docker Content Trust)"
+
+  # A09: Security Logging and Monitoring Failures (保持第九)
+  - rule_id: "owasp-2025-a09-001"
+    category: "A09"
+    name: "Logging and Monitoring Failures Detection"
+    description: "Detects security logging and monitoring failures including missing audit logs, log injection, and SIEM integration gaps."
+    enabled: true
+    severity: "MEDIUM"
+    requires_ai: false
+    cwe_ids:
+      - "CWE-117"
+      - "CWE-778"
+    preview_features:
+      - "SIEM Integration Check (Splunk/ELK)"
+      - "Anomaly Detection Readiness"
+      - "Cloud Logging Compliance (CloudTrail/Azure Monitor)"
+
+  # A10: Server-Side Request Forgery (保守選項) 或 AI/ML Vulnerabilities (激進選項)
+  # 預設使用保守選項，等待 OWASP 2025 官方確認
+  - rule_id: "owasp-2025-a10-001"
+    category: "A10"
+    name: "Server-Side Request Forgery (SSRF) Detection"
+    description: "Detects SSRF vulnerabilities including cloud metadata attacks and Kubernetes API exploitation."
+    enabled: true
+    severity: "HIGH"
+    requires_ai: true
+    cwe_ids:
+      - "CWE-918"
+    preview_features:
+      - "Cloud Metadata Attack Detection (AWS IMDS/Azure Metadata)"
+      - "Kubernetes API Attack Detection"
+    alternative_a10:
+      # 激進選項：AI/ML Vulnerabilities 作為獨立類別
+      enabled: false  # 預設停用，等待官方確認
+      rule_id: "owasp-2025-a10-ai-ml"
+      name: "AI/ML Vulnerabilities Detection"
+      description: "Detects AI/ML specific vulnerabilities (alternative to SSRF if OWASP 2025 adopts AI/ML as A10)."
+      severity: "CRITICAL"
+      cwe_ids:
+        - "CWE-1236"
+        - "CWE-20"
+        - "CWE-200"
+      features:
+        - "Prompt Injection Detection"
+        - "Training Data Poisoning Detection"
+        - "Model Theft Detection"
+        - "Excessive Agency Detection"
+
+# 配置檔更新指南
+update_guide:
+  official_release_date: "2025-11-01 (estimated)"
+  update_procedure:
+    - step: 1
+      action: "下載官方 OWASP 2025 發布文件"
+      url: "https://owasp.org/www-project-top-ten/"
+    - step: 2
+      action: "對照此 YAML 檔案，更新 rule_id, cwe_ids, severity"
+    - step: 3
+      action: "如 A10 確定為 AI/ML Vulnerabilities，切換 alternative_a10.enabled = true"
+    - step: 4
+      action: "重新載入插件配置（無需重新編譯）"
+    - step: 5
+      action: "執行測試套件驗證規則正確性"
+
+# 版本映射表（供 OwaspVersionMappingService 使用）
+version_mappings:
+  "2021_to_2025":
+    - source: "A01:2021"
+      target: "A01:2025"
+      type: "ENHANCED"  # 增強版本
+      changes: "新增 API/雲端/微服務授權檢測"
+    - source: "A03:2021"
+      target: "A03:2025"
+      type: "EXTENDED"  # 擴展範圍
+      changes: "新增 Prompt Injection 檢測"
+    - source: "A06:2021"
+      target: "A06:2025"
+      type: "UPGRADED"  # 升級為更廣範疇
+      changes: "從過時元件擴展為軟體供應鏈攻擊"
+    - source: "A10:2021"
+      target: "A10:2025"
+      type: "UNCERTAIN"  # 不確定
+      changes: "可能保持 SSRF 或改為 AI/ML Vulnerabilities"
+
+# 規則熱載入配置
+hot_reload:
+  enabled: true
+  watch_file_changes: true
+  reload_interval_seconds: 60
+  backup_on_reload: true

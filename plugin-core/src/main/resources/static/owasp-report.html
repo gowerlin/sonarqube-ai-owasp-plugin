@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWASP Security Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f3f3f3;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Section */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Filter Panel */
+        .filter-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .filter-panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #444;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .filter-group select,
+        .filter-group input[type="text"] {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding-left: 40px;
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #555;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        /* Summary Stats */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 0.95rem;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card.critical .number { color: #dc3545; }
+        .stat-card.high .number { color: #fd7e14; }
+        .stat-card.medium .number { color: #ffc107; }
+        .stat-card.low .number { color: #28a745; }
+        .stat-card.info .number { color: #17a2b8; }
+
+        /* Findings List */
+        .findings-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .findings-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #444;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .findings-count {
+            font-size: 0.9rem;
+            color: #777;
+            font-weight: 400;
+        }
+
+        .finding-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .finding-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .finding-header {
+            display: flex;
+            align-items: start;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .severity-badge {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .severity-critical { background: #dc3545; color: white; }
+        .severity-high { background: #fd7e14; color: white; }
+        .severity-medium { background: #ffc107; color: #333; }
+        .severity-low { background: #28a745; color: white; }
+        .severity-info { background: #17a2b8; color: white; }
+
+        .finding-title {
+            flex: 1;
+        }
+
+        .finding-title h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .finding-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .finding-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .finding-description {
+            color: #555;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        .finding-location {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .finding-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #e9ecef;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #495057;
+        }
+
+        .finding-details {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .finding-card.expanded .finding-details {
+            display: block;
+        }
+
+        .code-snippet {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+
+        .code-snippet pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .recommendation {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .recommendation h4 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+
+        .recommendation p {
+            color: #0c5460;
+            line-height: 1.7;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #777;
+        }
+
+        .loading::before {
+            content: "⏳";
+            display: block;
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #777;
+        }
+
+        .empty-state::before {
+            content: "📭";
+            display: block;
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .finding-header {
+                flex-direction: column;
+            }
+
+            .finding-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🛡️ OWASP Security Analysis Report</h1>
+            <div class="subtitle">AI-Powered Vulnerability Detection with Multi-Version OWASP Top 10 Support</div>
+        </div>
+
+        <!-- Filter Panel -->
+        <div class="filter-panel">
+            <h2>🔍 Filter & Search</h2>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="severityFilter">Severity</label>
+                    <select id="severityFilter">
+                        <option value="">All Severities</option>
+                        <option value="CRITICAL">Critical</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                        <option value="INFO">Info</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="owaspFilter">OWASP Category</label>
+                    <select id="owaspFilter">
+                        <option value="">All Categories</option>
+                        <option value="A01">A01: Broken Access Control</option>
+                        <option value="A02">A02: Cryptographic Failures</option>
+                        <option value="A03">A03: Injection</option>
+                        <option value="A04">A04: Insecure Design</option>
+                        <option value="A05">A05: Security Misconfiguration</option>
+                        <option value="A06">A06: Vulnerable Components</option>
+                        <option value="A07">A07: Auth Failures</option>
+                        <option value="A08">A08: Data Integrity</option>
+                        <option value="A09">A09: Logging Failures</option>
+                        <option value="A10">A10: SSRF</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="fileFilter">File Path</label>
+                    <select id="fileFilter">
+                        <option value="">All Files</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-group search-box">
+                    <label for="searchBox">Search</label>
+                    <input type="text" id="searchBox" placeholder="Search by title, CWE ID, description...">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+                <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="summary-stats" id="summaryStats">
+            <div class="stat-card critical">
+                <div class="number" id="criticalCount">0</div>
+                <div class="label">Critical</div>
+            </div>
+            <div class="stat-card high">
+                <div class="number" id="highCount">0</div>
+                <div class="label">High</div>
+            </div>
+            <div class="stat-card medium">
+                <div class="number" id="mediumCount">0</div>
+                <div class="label">Medium</div>
+            </div>
+            <div class="stat-card low">
+                <div class="number" id="lowCount">0</div>
+                <div class="label">Low</div>
+            </div>
+            <div class="stat-card info">
+                <div class="number" id="infoCount">0</div>
+                <div class="label">Info</div>
+            </div>
+        </div>
+
+        <!-- Findings Section -->
+        <div class="findings-section">
+            <h2>
+                📋 Security Findings
+                <span class="findings-count" id="findingsCount">0 findings</span>
+            </h2>
+            <div id="findingsList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let allFindings = [];
+        let filteredFindings = [];
+        const projectKey = new URLSearchParams(window.location.search).get('project') || 'unknown';
+
+        // Initialize page
+        async function init() {
+            showLoading();
+            await loadReportData();
+            populateFileFilter();
+            applyFilters();
+        }
+
+        // Load report data from API
+        async function loadReportData() {
+            try {
+                // In real SonarQube environment, use: window.SonarRequest.getJSON
+                const response = await fetch(`/api/owasp/report/export?project=${projectKey}&format=json`);
+                const data = await response.json();
+
+                // Parse findings from JSON report
+                allFindings = parseFindings(data);
+            } catch (error) {
+                console.error('Failed to load report data:', error);
+                // Use mock data for demonstration
+                allFindings = generateMockData();
+            }
+        }
+
+        // Parse findings from JSON report structure
+        function parseFindings(data) {
+            const findings = [];
+
+            // Handle multi-version report structure
+            if (data.versions && Array.isArray(data.versions)) {
+                data.versions.forEach(version => {
+                    if (version.findings) {
+                        version.findings.forEach(finding => {
+                            findings.push({
+                                ...finding,
+                                owaspVersion: version.owaspVersion
+                            });
+                        });
+                    }
+                });
+            } else if (data.findings && Array.isArray(data.findings)) {
+                // Single version report
+                findings.push(...data.findings);
+            }
+
+            return findings;
+        }
+
+        // Populate file filter dropdown
+        function populateFileFilter() {
+            const fileFilter = document.getElementById('fileFilter');
+            const uniqueFiles = [...new Set(allFindings.map(f => f.filePath))].sort();
+
+            uniqueFiles.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file;
+                option.textContent = file;
+                fileFilter.appendChild(option);
+            });
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const severityFilter = document.getElementById('severityFilter').value;
+            const owaspFilter = document.getElementById('owaspFilter').value;
+            const fileFilter = document.getElementById('fileFilter').value;
+            const searchText = document.getElementById('searchBox').value.toLowerCase();
+
+            filteredFindings = allFindings.filter(finding => {
+                // Severity filter
+                if (severityFilter && finding.severity !== severityFilter) return false;
+
+                // OWASP category filter
+                if (owaspFilter && !finding.owaspCategory?.startsWith(owaspFilter)) return false;
+
+                // File path filter
+                if (fileFilter && finding.filePath !== fileFilter) return false;
+
+                // Search filter
+                if (searchText) {
+                    const searchableText = [
+                        finding.title,
+                        finding.description,
+                        finding.cweId,
+                        finding.owaspCategory
+                    ].join(' ').toLowerCase();
+
+                    if (!searchableText.includes(searchText)) return false;
+                }
+
+                return true;
+            });
+
+            updateSummaryStats();
+            renderFindings();
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('severityFilter').value = '';
+            document.getElementById('owaspFilter').value = '';
+            document.getElementById('fileFilter').value = '';
+            document.getElementById('searchBox').value = '';
+            applyFilters();
+        }
+
+        // Update summary statistics
+        function updateSummaryStats() {
+            const stats = {
+                CRITICAL: 0,
+                HIGH: 0,
+                MEDIUM: 0,
+                LOW: 0,
+                INFO: 0
+            };
+
+            filteredFindings.forEach(finding => {
+                if (stats.hasOwnProperty(finding.severity)) {
+                    stats[finding.severity]++;
+                }
+            });
+
+            document.getElementById('criticalCount').textContent = stats.CRITICAL;
+            document.getElementById('highCount').textContent = stats.HIGH;
+            document.getElementById('mediumCount').textContent = stats.MEDIUM;
+            document.getElementById('lowCount').textContent = stats.LOW;
+            document.getElementById('infoCount').textContent = stats.INFO;
+            document.getElementById('findingsCount').textContent = `${filteredFindings.length} findings`;
+        }
+
+        // Render findings list
+        function renderFindings() {
+            const findingsList = document.getElementById('findingsList');
+
+            if (filteredFindings.length === 0) {
+                findingsList.innerHTML = '<div class="empty-state">No findings match your filters</div>';
+                return;
+            }
+
+            findingsList.innerHTML = filteredFindings.map((finding, index) => `
+                <div class="finding-card" onclick="toggleDetails(${index})">
+                    <div class="finding-header">
+                        <span class="severity-badge severity-${finding.severity.toLowerCase()}">${finding.severity}</span>
+                        <div class="finding-title">
+                            <h3>${escapeHtml(finding.title)}</h3>
+                            <div class="finding-meta">
+                                <span>📂 ${escapeHtml(finding.filePath)}</span>
+                                <span>📍 Line ${finding.lineNumber || 'N/A'}</span>
+                                <span>🔖 ${escapeHtml(finding.owaspCategory || 'N/A')}</span>
+                                <span>🔗 ${escapeHtml(finding.cweId || 'N/A')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="finding-description">
+                        ${escapeHtml(finding.description)}
+                    </div>
+                    <div class="finding-location">
+                        <strong>Location:</strong> ${escapeHtml(finding.filePath)}:${finding.lineNumber || '?'}
+                    </div>
+                    <div class="finding-tags">
+                        ${finding.tags ? finding.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('') : ''}
+                    </div>
+                    <div class="finding-details">
+                        ${finding.codeSnippet ? `
+                            <div class="code-snippet">
+                                <pre>${escapeHtml(finding.codeSnippet)}</pre>
+                            </div>
+                        ` : ''}
+                        ${finding.recommendation ? `
+                            <div class="recommendation">
+                                <h4>💡 Recommendation</h4>
+                                <p>${escapeHtml(finding.recommendation)}</p>
+                            </div>
+                        ` : ''}
+                        ${finding.fixSuggestion ? `
+                            <div class="recommendation">
+                                <h4>🔧 Fix Suggestion</h4>
+                                <p>${escapeHtml(finding.fixSuggestion)}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Toggle finding details
+        function toggleDetails(index) {
+            const cards = document.querySelectorAll('.finding-card');
+            cards[index].classList.toggle('expanded');
+        }
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('findingsList').innerHTML = '<div class="loading">Loading report data...</div>';
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Generate mock data for demonstration
+        function generateMockData() {
+            return [
+                {
+                    severity: 'CRITICAL',
+                    title: 'SQL Injection Vulnerability',
+                    description: 'User input is directly concatenated into SQL query without proper sanitization.',
+                    filePath: 'src/main/java/com/example/UserService.java',
+                    lineNumber: 45,
+                    owaspCategory: 'A03:2021-Injection',
+                    cweId: 'CWE-89',
+                    tags: ['injection', 'database', 'security'],
+                    codeSnippet: 'String query = "SELECT * FROM users WHERE username = \'" + username + "\'";',
+                    recommendation: 'Use parameterized queries (PreparedStatement) instead of string concatenation.',
+                    fixSuggestion: 'PreparedStatement ps = connection.prepareStatement("SELECT * FROM users WHERE username = ?");\nps.setString(1, username);'
+                },
+                {
+                    severity: 'HIGH',
+                    title: 'Hardcoded Credentials',
+                    description: 'Database password is hardcoded in source code.',
+                    filePath: 'src/main/resources/application.properties',
+                    lineNumber: 12,
+                    owaspCategory: 'A02:2021-Cryptographic Failures',
+                    cweId: 'CWE-798',
+                    tags: ['credentials', 'configuration'],
+                    codeSnippet: 'spring.datasource.password=admin123',
+                    recommendation: 'Store credentials in environment variables or secure vault.',
+                    fixSuggestion: 'Use ${DB_PASSWORD} and set environment variable.'
+                }
+            ];
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

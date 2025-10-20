@@ -1,0 +1,13 @@
+{
+  "projectKey": "my-project",
+  "status": "IN_PROGRESS",
+  "processedFiles": 45,
+  "totalFiles": 100,
+  "currentFile": "src/main/java/com/example/service/UserService.java",
+  "progressPercentage": 45.00,
+  "startTime": "2025-10-20T10:30:00Z",
+  "endTime": "",
+  "durationMillis": 135000,
+  "estimatedRemainingMillis": 165000,
+  "errorMessage": ""
+}

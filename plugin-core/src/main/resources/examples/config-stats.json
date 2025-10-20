@@ -1,0 +1,21 @@
+{
+  "projectAiConfigCount": 3,
+  "projectScanConfigCount": 2,
+  "globalAi": {
+    "provider": "OPENAI",
+    "model": "gpt-4",
+    "temperature": 0.30,
+    "maxTokens": 4096,
+    "timeoutSeconds": 60,
+    "valid": true,
+    "summary": "OPENAI gpt-4 (temp=0.3, tokens=4096, timeout=60s)"
+  },
+  "globalScan": {
+    "scanMode": "FULL_PROJECT",
+    "includePatterns": ["**/*.java", "**/*.js", "**/*.py"],
+    "excludePatterns": ["**/test/**", "***/node_modules/**"],
+    "enableParallelAnalysis": true,
+    "parallelDegree": 3,
+    "summary": "FULL_PROJECT (parallel=3, includes=3 patterns, excludes=2 patterns)"
+  }
+}

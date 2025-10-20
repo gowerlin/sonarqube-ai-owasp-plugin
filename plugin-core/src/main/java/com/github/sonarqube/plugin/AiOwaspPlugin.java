@@ -1,5 +1,11 @@
 package com.github.sonarqube.plugin;
 
+import com.github.sonarqube.plugin.api.CliStatusApiController;
+import com.github.sonarqube.plugin.api.ConfigurationApiController;
+import com.github.sonarqube.plugin.api.OwaspVersionApiController;
+import com.github.sonarqube.plugin.api.PdfReportApiController;
+import com.github.sonarqube.plugin.api.ScanProgressApiController;
+import com.github.sonarqube.plugin.web.OwaspReportPageDefinition;
 import org.sonar.api.Plugin;
 import org.sonar.api.config.PropertyDefinition;
 import org.slf4j.Logger;
@@ -61,12 +67,17 @@ public class AiOwaspPlugin implements Plugin {
         // 註冊配置屬性
         defineProperties(context);
 
+        // 註冊 Web Services (API 端點)
+        defineWebServices(context);
+
+        // 註冊 Web 頁面 (Epic 5.6 + 7.4)
+        defineWebPages(context);
+
         // 註冊擴充功能
         // TODO: 在後續 Epic 中實現
         // - 規則定義 (RulesDefinition)
         // - 掃描器 (Scanner)
         // - 品質檔案 (QualityProfile)
-        // - Web 頁面 (PageDefinition)
         // - 度量指標 (Metrics)
 
         LOG.info("AI OWASP Security Plugin 載入完成");
@@ -292,5 +303,37 @@ public class AiOwaspPlugin implements Plugin {
         );
 
         LOG.debug("已註冊 {} 個配置屬性", 17);
+    }
+
+    /**
+     * 註冊 Web Services (API 端點)
+     */
+    private void defineWebServices(Context context) {
+        // 配置管理 API (Epic 7.1)
+        context.addExtension(ConfigurationApiController.class);
+
+        // 掃描進度追蹤 API (Epic 7.5)
+        context.addExtension(ScanProgressApiController.class);
+
+        // 版本管理 API
+        context.addExtension(OwaspVersionApiController.class);
+
+        // PDF 報告匯出 API (包含 HTML/JSON/Markdown)
+        context.addExtension(PdfReportApiController.class);
+
+        // CLI 狀態檢查 API (Epic 9)
+        context.addExtension(CliStatusApiController.class);
+
+        LOG.debug("已註冊 {} 個 Web Service", 5);
+    }
+
+    /**
+     * 註冊 Web 頁面 (Epic 5.6 + 7.4)
+     */
+    private void defineWebPages(Context context) {
+        // OWASP 報告查看頁面 (Epic 5.6 + 7.4)
+        context.addExtension(OwaspReportPageDefinition.class);
+
+        LOG.debug("已註冊 {} 個 Web Page", 1);
     }
 }

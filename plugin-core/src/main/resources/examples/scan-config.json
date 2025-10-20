@@ -1,0 +1,8 @@
+{
+  "scanMode": "FULL_PROJECT",
+  "includePatterns": ["**/*.java", "**/*.js", "**/*.py"],
+  "excludePatterns": ["**/test/**", "**/node_modules/**"],
+  "enableParallelAnalysis": true,
+  "parallelDegree": 3,
+  "summary": "FULL_PROJECT (parallel=3, includes=3 patterns, excludes=2 patterns)"
+}

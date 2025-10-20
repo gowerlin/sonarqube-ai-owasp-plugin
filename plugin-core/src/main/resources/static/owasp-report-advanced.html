@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWASP Security Report - Advanced UI</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #root {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .app-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .app-header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .app-header .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h3 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .filter-section {
+            margin-bottom: 25px;
+        }
+
+        .filter-section label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .filter-section select,
+        .filter-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .filter-section select:focus,
+        .filter-section input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .stat-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .stat-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .stat-badge {
+            background: white;
+            color: #333;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .stat-item.active .stat-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            min-height: 600px;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .content-header h2 {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .view-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Finding Cards */
+        .findings-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .finding-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: white;
+        }
+
+        .finding-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .finding-card.expanded {
+            border-color: #667eea;
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+        }
+
+        .finding-header {
+            display: flex;
+            align-items: start;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .severity-badge {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .severity-CRITICAL { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; }
+        .severity-HIGH { background: linear-gradient(135deg, #fd7e14 0%, #e8590c 100%); color: white; }
+        .severity-MEDIUM { background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: #333; }
+        .severity-LOW { background: linear-gradient(135deg, #28a745 0%, #218838 100%); color: white; }
+        .severity-INFO { background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; }
+
+        .finding-content {
+            flex: 1;
+        }
+
+        .finding-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .finding-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .finding-description {
+            color: #555;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        .finding-location {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .finding-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .finding-details {
+            display: none;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px solid #f0f0f0;
+            animation: fadeIn 0.3s;
+        }
+
+        .finding-card.expanded .finding-details {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .code-block {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .recommendation-box {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .recommendation-box h4 {
+            color: #0c5460;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .recommendation-box p {
+            color: #0c5460;
+            line-height: 1.7;
+        }
+
+        /* Loading & Empty States */
+        .state-container {
+            text-align: center;
+            padding: 80px 20px;
+            color: #777;
+        }
+
+        .state-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .state-text {
+            font-size: 1.2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .content-header {
+                flex-direction: column;
+                align-items: start;
+                gap: 15px;
+            }
+
+            .finding-header {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // Utility: Escape HTML
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+
+        // Component: Severity Stats Item
+        const SeverityStatItem = ({ severity, count, isActive, onClick }) => (
+            <div
+                className={`stat-item ${isActive ? 'active' : ''}`}
+                onClick={onClick}
+            >
+                <span className="stat-label">{severity}</span>
+                <span className="stat-badge">{count}</span>
+            </div>
+        );
+
+        // Component: Filter Sidebar
+        const FilterSidebar = ({ filters, onFilterChange, stats, activeSeverity, onSeverityClick }) => {
+            return (
+                <div className="sidebar">
+                    <h3>🔍 Filters</h3>
+
+                    <div className="stats-grid">
+                        {['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'].map(severity => (
+                            <SeverityStatItem
+                                key={severity}
+                                severity={severity}
+                                count={stats[severity] || 0}
+                                isActive={activeSeverity === severity}
+                                onClick={() => onSeverityClick(severity)}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="filter-section">
+                        <label>OWASP Category</label>
+                        <select
+                            value={filters.owasp}
+                            onChange={(e) => onFilterChange('owasp', e.target.value)}
+                        >
+                            <option value="">All Categories</option>
+                            <option value="A01">A01: Broken Access Control</option>
+                            <option value="A02">A02: Cryptographic Failures</option>
+                            <option value="A03">A03: Injection</option>
+                            <option value="A04">A04: Insecure Design</option>
+                            <option value="A05">A05: Security Misconfiguration</option>
+                            <option value="A06">A06: Vulnerable Components</option>
+                            <option value="A07">A07: Auth Failures</option>
+                            <option value="A08">A08: Data Integrity</option>
+                            <option value="A09">A09: Logging Failures</option>
+                            <option value="A10">A10: SSRF</option>
+                        </select>
+                    </div>
+
+                    <div className="filter-section">
+                        <label>File Path</label>
+                        <select
+                            value={filters.file}
+                            onChange={(e) => onFilterChange('file', e.target.value)}
+                        >
+                            <option value="">All Files</option>
+                            {filters.fileOptions.map(file => (
+                                <option key={file} value={file}>{file}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="filter-section">
+                        <label>Search</label>
+                        <input
+                            type="text"
+                            placeholder="Search findings..."
+                            value={filters.search}
+                            onChange={(e) => onFilterChange('search', e.target.value)}
+                        />
+                    </div>
+                </div>
+            );
+        };
+
+        // Component: Finding Card
+        const FindingCard = ({ finding, isExpanded, onToggle }) => (
+            <div
+                className={`finding-card ${isExpanded ? 'expanded' : ''}`}
+                onClick={onToggle}
+            >
+                <div className="finding-header">
+                    <span className={`severity-badge severity-${finding.severity}`}>
+                        {finding.severity}
+                    </span>
+                    <div className="finding-content">
+                        <div className="finding-title">{finding.title}</div>
+                        <div className="finding-meta">
+                            <span className="meta-item">📂 {finding.filePath}</span>
+                            <span className="meta-item">📍 Line {finding.lineNumber || 'N/A'}</span>
+                            <span className="meta-item">🔖 {finding.owaspCategory || 'N/A'}</span>
+                            <span className="meta-item">🔗 {finding.cweId || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="finding-description">
+                    {finding.description}
+                </div>
+
+                <div className="finding-location">
+                    <strong>Location:</strong> {finding.filePath}:{finding.lineNumber || '?'}
+                </div>
+
+                {finding.tags && finding.tags.length > 0 && (
+                    <div className="finding-tags">
+                        {finding.tags.map((tag, idx) => (
+                            <span key={idx} className="tag">{tag}</span>
+                        ))}
+                    </div>
+                )}
+
+                <div className="finding-details">
+                    {finding.codeSnippet && (
+                        <div className="code-block">
+                            <pre>{finding.codeSnippet}</pre>
+                        </div>
+                    )}
+                    {finding.recommendation && (
+                        <div className="recommendation-box">
+                            <h4>💡 Recommendation</h4>
+                            <p>{finding.recommendation}</p>
+                        </div>
+                    )}
+                    {finding.fixSuggestion && (
+                        <div className="recommendation-box">
+                            <h4>🔧 Fix Suggestion</h4>
+                            <p>{finding.fixSuggestion}</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+
+        // Main App Component
+        const App = () => {
+            const [findings, setFindings] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [expandedId, setExpandedId] = useState(null);
+            const [activeSeverity, setActiveSeverity] = useState(null);
+            const [filters, setFilters] = useState({
+                severity: '',
+                owasp: '',
+                file: '',
+                search: '',
+                fileOptions: []
+            });
+
+            // Load data
+            useEffect(() => {
+                loadData();
+            }, []);
+
+            const loadData = async () => {
+                try {
+                    const projectKey = new URLSearchParams(window.location.search).get('project') || 'unknown';
+                    const response = await fetch(`/api/owasp/report/export?project=${projectKey}&format=json`);
+                    const data = await response.json();
+
+                    const parsed = parseFindings(data);
+                    setFindings(parsed);
+
+                    const files = [...new Set(parsed.map(f => f.filePath))].sort();
+                    setFilters(prev => ({ ...prev, fileOptions: files }));
+                } catch (error) {
+                    console.error('Failed to load data:', error);
+                    setFindings(getMockData());
+                    const files = [...new Set(getMockData().map(f => f.filePath))].sort();
+                    setFilters(prev => ({ ...prev, fileOptions: files }));
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const parseFindings = (data) => {
+                const result = [];
+                if (data.versions && Array.isArray(data.versions)) {
+                    data.versions.forEach(version => {
+                        if (version.findings) {
+                            version.findings.forEach(finding => {
+                                result.push({ ...finding, owaspVersion: version.owaspVersion });
+                            });
+                        }
+                    });
+                } else if (data.findings && Array.isArray(data.findings)) {
+                    result.push(...data.findings);
+                }
+                return result;
+            };
+
+            // Filter findings
+            const filteredFindings = useMemo(() => {
+                return findings.filter(finding => {
+                    if (activeSeverity && finding.severity !== activeSeverity) return false;
+                    if (filters.owasp && !finding.owaspCategory?.startsWith(filters.owasp)) return false;
+                    if (filters.file && finding.filePath !== filters.file) return false;
+                    if (filters.search) {
+                        const searchText = [
+                            finding.title,
+                            finding.description,
+                            finding.cweId,
+                            finding.owaspCategory
+                        ].join(' ').toLowerCase();
+                        if (!searchText.includes(filters.search.toLowerCase())) return false;
+                    }
+                    return true;
+                });
+            }, [findings, filters, activeSeverity]);
+
+            // Calculate stats
+            const stats = useMemo(() => {
+                const result = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, INFO: 0 };
+                filteredFindings.forEach(f => {
+                    if (result.hasOwnProperty(f.severity)) {
+                        result[f.severity]++;
+                    }
+                });
+                return result;
+            }, [filteredFindings]);
+
+            const handleFilterChange = (key, value) => {
+                setFilters(prev => ({ ...prev, [key]: value }));
+            };
+
+            const handleSeverityClick = (severity) => {
+                setActiveSeverity(prev => prev === severity ? null : severity);
+            };
+
+            if (loading) {
+                return (
+                    <div className="state-container">
+                        <div className="state-icon">⏳</div>
+                        <div className="state-text">Loading report data...</div>
+                    </div>
+                );
+            }
+
+            return (
+                <>
+                    <div className="app-header">
+                        <h1>🛡️ OWASP Security Analysis Report</h1>
+                        <div className="subtitle">
+                            AI-Powered Vulnerability Detection with Multi-Version OWASP Top 10 Support
+                        </div>
+                    </div>
+
+                    <div className="main-layout">
+                        <FilterSidebar
+                            filters={filters}
+                            onFilterChange={handleFilterChange}
+                            stats={stats}
+                            activeSeverity={activeSeverity}
+                            onSeverityClick={handleSeverityClick}
+                        />
+
+                        <div className="main-content">
+                            <div className="content-header">
+                                <h2>📋 Security Findings</h2>
+                                <div className="findings-count">
+                                    {filteredFindings.length} findings
+                                </div>
+                            </div>
+
+                            {filteredFindings.length === 0 ? (
+                                <div className="state-container">
+                                    <div className="state-icon">📭</div>
+                                    <div className="state-text">No findings match your filters</div>
+                                </div>
+                            ) : (
+                                <div className="findings-grid">
+                                    {filteredFindings.map((finding, idx) => (
+                                        <FindingCard
+                                            key={idx}
+                                            finding={finding}
+                                            isExpanded={expandedId === idx}
+                                            onToggle={() => setExpandedId(prev => prev === idx ? null : idx)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </>
+            );
+        };
+
+        // Mock data for demo
+        function getMockData() {
+            return [
+                {
+                    severity: 'CRITICAL',
+                    title: 'SQL Injection Vulnerability',
+                    description: 'User input is directly concatenated into SQL query without proper sanitization.',
+                    filePath: 'src/main/java/com/example/UserService.java',
+                    lineNumber: 45,
+                    owaspCategory: 'A03:2021-Injection',
+                    cweId: 'CWE-89',
+                    tags: ['injection', 'database', 'security'],
+                    codeSnippet: 'String query = "SELECT * FROM users WHERE username = \'" + username + "\'";',
+                    recommendation: 'Use parameterized queries (PreparedStatement) instead of string concatenation.',
+                    fixSuggestion: 'PreparedStatement ps = connection.prepareStatement("SELECT * FROM users WHERE username = ?");\nps.setString(1, username);'
+                },
+                {
+                    severity: 'HIGH',
+                    title: 'Hardcoded Credentials',
+                    description: 'Database password is hardcoded in source code.',
+                    filePath: 'src/main/resources/application.properties',
+                    lineNumber: 12,
+                    owaspCategory: 'A02:2021-Cryptographic Failures',
+                    cweId: 'CWE-798',
+                    tags: ['credentials', 'configuration'],
+                    codeSnippet: 'spring.datasource.password=admin123',
+                    recommendation: 'Store credentials in environment variables or secure vault.',
+                    fixSuggestion: 'Use ${DB_PASSWORD} and set environment variable.'
+                },
+                {
+                    severity: 'MEDIUM',
+                    title: 'Insecure Random Number Generation',
+                    description: 'Using Math.random() for security-sensitive operations.',
+                    filePath: 'src/main/java/com/example/TokenGenerator.java',
+                    lineNumber: 28,
+                    owaspCategory: 'A02:2021-Cryptographic Failures',
+                    cweId: 'CWE-330',
+                    tags: ['cryptography', 'random'],
+                    codeSnippet: 'String token = String.valueOf(Math.random());',
+                    recommendation: 'Use SecureRandom for cryptographic operations.',
+                    fixSuggestion: 'SecureRandom random = new SecureRandom();\nString token = new BigInteger(130, random).toString(32);'
+                }
+            ];
+        }
+
+        // Render app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
