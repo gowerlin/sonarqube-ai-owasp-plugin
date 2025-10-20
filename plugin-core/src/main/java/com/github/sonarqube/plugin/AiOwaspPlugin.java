@@ -1,12 +1,13 @@
 package com.github.sonarqube.plugin;
 
 import com.github.sonarqube.plugin.api.CliStatusApiController;
-import com.github.sonarqube.plugin.api.ConfigurationApiController;
+// import com.github.sonarqube.plugin.api.ConfigurationApiController; // TODO: 需要實作 AiConfiguration, ConfigurationManager, ScanScopeConfiguration 類別後才能啟用
 import com.github.sonarqube.plugin.api.OwaspVersionApiController;
 import com.github.sonarqube.plugin.api.PdfReportApiController;
 import com.github.sonarqube.plugin.api.ScanProgressApiController;
 import com.github.sonarqube.plugin.web.OwaspReportPageDefinition;
 import org.sonar.api.Plugin;
+import org.sonar.api.PropertyType;
 import org.sonar.api.config.PropertyDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +99,7 @@ public class AiOwaspPlugin implements Plugin {
                 .subCategory("Model Selection")
                 .defaultValue("openai")
                 .options("openai", "anthropic", "gemini-api", "gemini-cli", "copilot-cli", "claude-cli")
-                .type(PropertyDefinition.Type.SINGLE_SELECT_LIST)
+                .type(PropertyType.SINGLE_SELECT_LIST)
                 .index(1)
                 .build()
         );
@@ -109,7 +110,7 @@ public class AiOwaspPlugin implements Plugin {
                 .description("AI 模型的 API 金鑰（加密存儲）")
                 .category(CATEGORY_AI)
                 .subCategory("Authentication")
-                .type(PropertyDefinition.Type.PASSWORD)
+                .type(PropertyType.PASSWORD)
                 .index(2)
                 .build()
         );
@@ -124,7 +125,7 @@ public class AiOwaspPlugin implements Plugin {
                 .options("gpt-4", "gpt-4-turbo", "gpt-3.5-turbo",
                          "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307",
                          "gemini-1.5-pro", "gemini-1.5-flash")
-                .type(PropertyDefinition.Type.SINGLE_SELECT_LIST)
+                .type(PropertyType.SINGLE_SELECT_LIST)
                 .index(3)
                 .build()
         );
@@ -136,7 +137,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_AI)
                 .subCategory("Model Parameters")
                 .defaultValue("0.3")
-                .type(PropertyDefinition.Type.FLOAT)
+                .type(PropertyType.FLOAT)
                 .index(4)
                 .build()
         );
@@ -148,7 +149,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_AI)
                 .subCategory("Model Parameters")
                 .defaultValue("2000")
-                .type(PropertyDefinition.Type.INTEGER)
+                .type(PropertyType.INTEGER)
                 .index(5)
                 .build()
         );
@@ -160,7 +161,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_AI)
                 .subCategory("Model Parameters")
                 .defaultValue("60")
-                .type(PropertyDefinition.Type.INTEGER)
+                .type(PropertyType.INTEGER)
                 .index(6)
                 .build()
         );
@@ -210,7 +211,7 @@ public class AiOwaspPlugin implements Plugin {
                 .description("啟用 OWASP Top 10 2017 規則（10 個類別）")
                 .category(CATEGORY_OWASP)
                 .defaultValue("true")
-                .type(PropertyDefinition.Type.BOOLEAN)
+                .type(PropertyType.BOOLEAN)
                 .index(1)
                 .build()
         );
@@ -221,7 +222,7 @@ public class AiOwaspPlugin implements Plugin {
                 .description("啟用 OWASP Top 10 2021 規則（10 個類別，預設版本）")
                 .category(CATEGORY_OWASP)
                 .defaultValue("true")
-                .type(PropertyDefinition.Type.BOOLEAN)
+                .type(PropertyType.BOOLEAN)
                 .index(2)
                 .build()
         );
@@ -232,7 +233,7 @@ public class AiOwaspPlugin implements Plugin {
                 .description("啟用 OWASP Top 10 2025 預覽版規則")
                 .category(CATEGORY_OWASP)
                 .defaultValue("false")
-                .type(PropertyDefinition.Type.BOOLEAN)
+                .type(PropertyType.BOOLEAN)
                 .index(3)
                 .build()
         );
@@ -247,7 +248,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_PERFORMANCE)
                 .subCategory("Parallelism")
                 .defaultValue("3")
-                .type(PropertyDefinition.Type.INTEGER)
+                .type(PropertyType.INTEGER)
                 .index(1)
                 .build()
         );
@@ -259,7 +260,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_PERFORMANCE)
                 .subCategory("Caching")
                 .defaultValue("true")
-                .type(PropertyDefinition.Type.BOOLEAN)
+                .type(PropertyType.BOOLEAN)
                 .index(2)
                 .build()
         );
@@ -271,7 +272,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_PERFORMANCE)
                 .subCategory("Scanning")
                 .defaultValue("true")
-                .type(PropertyDefinition.Type.BOOLEAN)
+                .type(PropertyType.BOOLEAN)
                 .index(3)
                 .build()
         );
@@ -286,7 +287,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_REPORT)
                 .defaultValue("html")
                 .options("html", "json", "both")
-                .type(PropertyDefinition.Type.SINGLE_SELECT_LIST)
+                .type(PropertyType.SINGLE_SELECT_LIST)
                 .index(1)
                 .build()
         );
@@ -297,7 +298,7 @@ public class AiOwaspPlugin implements Plugin {
                 .description("啟用多版本對照報告（最多 3 個版本）")
                 .category(CATEGORY_REPORT)
                 .defaultValue("true")
-                .type(PropertyDefinition.Type.BOOLEAN)
+                .type(PropertyType.BOOLEAN)
                 .index(2)
                 .build()
         );
@@ -310,7 +311,8 @@ public class AiOwaspPlugin implements Plugin {
      */
     private void defineWebServices(Context context) {
         // 配置管理 API (Epic 7.1)
-        context.addExtension(ConfigurationApiController.class);
+        // TODO: 暫時停用，需要實作 AiConfiguration, ConfigurationManager, ScanScopeConfiguration 類別後才能啟用
+        // context.addExtension(ConfigurationApiController.class);
 
         // 掃描進度追蹤 API (Epic 7.5)
         context.addExtension(ScanProgressApiController.class);
@@ -324,7 +326,7 @@ public class AiOwaspPlugin implements Plugin {
         // CLI 狀態檢查 API (Epic 9)
         context.addExtension(CliStatusApiController.class);
 
-        LOG.debug("已註冊 {} 個 Web Service", 5);
+        LOG.debug("已註冊 {} 個 Web Service", 4);  // 暫時停用 ConfigurationApiController
     }
 
     /**

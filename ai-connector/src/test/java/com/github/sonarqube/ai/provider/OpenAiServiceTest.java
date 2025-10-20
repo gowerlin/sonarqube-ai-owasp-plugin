@@ -92,21 +92,20 @@ class OpenAiServiceTest {
             .maxTokens(100)
             .build();
 
-        try (OpenAiService realService = new OpenAiService(realConfig)) {
-            AiRequest request = AiRequest.builder("SELECT * FROM users WHERE id = '" + "' + userInput + '")
-                .fileName("test.java")
-                .language("java")
-                .owaspVersion("2021")
-                .build();
+        OpenAiService realService = new OpenAiService(realConfig);
+        AiRequest request = AiRequest.builder("SELECT * FROM users WHERE id = '" + "' + userInput + '")
+            .fileName("test.java")
+            .language("java")
+            .owaspVersion("2021")
+            .build();
 
-            AiResponse response = realService.analyzeCode(request);
+        AiResponse response = realService.analyzeCode(request);
 
-            assertNotNull(response);
-            assertTrue(response.isSuccess());
-            assertNotNull(response.getAnalysisResult());
-            assertTrue(response.getTokensUsed() > 0);
-            assertTrue(response.getProcessingTimeMs() > 0);
-        }
+        assertNotNull(response);
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getAnalysisResult());
+        assertTrue(response.getTokensUsed() > 0);
+        assertTrue(response.getProcessingTimeMs() > 0);
     }
 
     @Test
@@ -118,10 +117,9 @@ class OpenAiServiceTest {
             .apiKey(apiKey)
             .build();
 
-        try (OpenAiService realService = new OpenAiService(realConfig)) {
-            boolean connected = realService.testConnection();
-            assertTrue(connected, "Connection test should succeed with valid API key");
-        }
+        OpenAiService realService = new OpenAiService(realConfig);
+        boolean connected = realService.testConnection();
+        assertTrue(connected, "Connection test should succeed with valid API key");
     }
 
     @Test
@@ -132,16 +130,15 @@ class OpenAiServiceTest {
             .maxRetries(1) // 減少重試次數加快測試
             .build();
 
-        try (OpenAiService invalidService = new OpenAiService(invalidConfig)) {
-            AiRequest request = AiRequest.builder("public void test() {}")
-                .fileName("test.java")
-                .build();
+        OpenAiService invalidService = new OpenAiService(invalidConfig);
+        AiRequest request = AiRequest.builder("public void test() {}")
+            .fileName("test.java")
+            .build();
 
-            // 預期會拋出 AiException
-            assertThrows(AiException.class, () -> {
-                invalidService.analyzeCode(request);
-            });
-        }
+        // 預期會拋出 AiException
+        assertThrows(AiException.class, () -> {
+            invalidService.analyzeCode(request);
+        });
     }
 
     @Test
@@ -164,10 +161,9 @@ class OpenAiServiceTest {
                 .apiKey("test-api-key")
                 .build();
 
-            try (OpenAiService modelService = new OpenAiService(modelConfig)) {
-                assertEquals("OpenAI", modelService.getProviderName());
-                assertEquals(model.getModelId(), modelService.getModelName());
-            }
+            OpenAiService modelService = new OpenAiService(modelConfig);
+            assertEquals("OpenAI", modelService.getProviderName());
+            assertEquals(model.getModelId(), modelService.getModelName());
         }
     }
 }

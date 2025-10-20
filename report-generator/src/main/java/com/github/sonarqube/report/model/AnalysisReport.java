@@ -95,4 +95,13 @@ public class AnalysisReport {
     public List<SecurityFinding> getFindings() { return findings; }
     public ReportSummary getSummary() { return summary; }
     public String getAiModel() { return aiModel; }
+
+    // Convenience methods for backward compatibility
+    public int getTotalFindings() {
+        return summary != null ? summary.getTotalFindings() : 0;
+    }
+
+    public ReportSummary getReportSummary() {
+        return summary;
+    }
 }

@@ -58,38 +58,36 @@ public class ScanProgressApiController implements WebService {
                 .setRequired(true);
 
         // POST /api/owasp/scan/start?project=<key>&totalFiles=<n>
-        controller.createAction("start")
+        NewAction startAction = controller.createAction("start")
             .setDescription("Start a new scan and initialize progress tracking")
             .setSince("2.7.0")
             .setPost(true)
-            .setHandler(new StartScanHandler())
-            .createParam("project")
+            .setHandler(new StartScanHandler());
+
+        startAction.createParam("project")
                 .setDescription("Project key")
-                .setRequired(true)
-            .and()
-            .createParam("totalFiles")
+                .setRequired(true);
+        startAction.createParam("totalFiles")
                 .setDescription("Total number of files to scan")
                 .setRequired(true);
 
         // POST /api/owasp/scan/update?project=<key>&file=<path>&processed=<n>&total=<n>
-        controller.createAction("update")
+        NewAction updateAction = controller.createAction("update")
             .setDescription("Update scan progress")
             .setSince("2.7.0")
             .setPost(true)
-            .setHandler(new UpdateProgressHandler())
-            .createParam("project")
+            .setHandler(new UpdateProgressHandler());
+
+        updateAction.createParam("project")
                 .setDescription("Project key")
-                .setRequired(true)
-            .and()
-            .createParam("file")
+                .setRequired(true);
+        updateAction.createParam("file")
                 .setDescription("Current file being processed")
-                .setRequired(true)
-            .and()
-            .createParam("processed")
+                .setRequired(true);
+        updateAction.createParam("processed")
                 .setDescription("Number of files processed")
-                .setRequired(true)
-            .and()
-            .createParam("total")
+                .setRequired(true);
+        updateAction.createParam("total")
                 .setDescription("Total number of files")
                 .setRequired(true);
 
@@ -104,16 +102,16 @@ public class ScanProgressApiController implements WebService {
                 .setRequired(true);
 
         // POST /api/owasp/scan/fail?project=<key>&error=<message>
-        controller.createAction("fail")
+        NewAction failAction = controller.createAction("fail")
             .setDescription("Mark scan as failed")
             .setSince("2.7.0")
             .setPost(true)
-            .setHandler(new FailScanHandler())
-            .createParam("project")
+            .setHandler(new FailScanHandler());
+
+        failAction.createParam("project")
                 .setDescription("Project key")
-                .setRequired(true)
-            .and()
-            .createParam("error")
+                .setRequired(true);
+        failAction.createParam("error")
                 .setDescription("Error message")
                 .setRequired(true);
 

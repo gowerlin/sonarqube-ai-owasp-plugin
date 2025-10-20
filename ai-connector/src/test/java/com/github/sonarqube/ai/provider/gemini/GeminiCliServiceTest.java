@@ -121,8 +121,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("SELECT * FROM users WHERE id = " + request_id)
+        AiRequest request = AiRequest.builder("SELECT * FROM users WHERE id = ' + request_id + '")
             .fileName("UserService.java")
             .language("java")
             .build();
@@ -151,8 +150,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("public String safeMethod() { return \"hello\"; }")
+        AiRequest request = AiRequest.builder("public String safeMethod() { return \"hello\"; }")
             .fileName("SafeClass.java")
             .build();
 
@@ -171,8 +169,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// some code")
+        AiRequest request = AiRequest.builder("// some code")
             .fileName("test.java")
             .build();
 
@@ -189,8 +186,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn("No security vulnerabilities detected.");
 
-        AiRequest request = AiRequest.builder()
-            .code("// test code")
+        AiRequest request = AiRequest.builder("// test code")
             .fileName("test.java")
             .language("java")
             .build();
@@ -222,8 +218,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn("");
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -237,8 +232,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenThrow(new CliExecutionException("CLI execution failed", 1, "gemini chat", "", "error"));
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -252,8 +246,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenThrow(new IOException("I/O error"));
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -267,8 +260,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenThrow(new InterruptedException("Interrupted"));
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -290,7 +282,7 @@ class GeminiCliServiceTest {
     }
 
     @Test
-    void testTestConnectionFailureCliNotAvailable() {
+    void testTestConnectionFailureCliNotAvailable() throws Exception {
         when(mockExecutor.isCliAvailable()).thenReturn(false);
 
         boolean result = service.testConnection();
@@ -328,8 +320,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -351,8 +342,7 @@ class GeminiCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 

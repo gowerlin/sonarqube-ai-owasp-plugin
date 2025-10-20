@@ -106,4 +106,28 @@ public class ReportSummary {
     public int getMajorCount() {
         return severityCounts.getOrDefault("MAJOR", 0);
     }
+
+    public int getMinorCount() {
+        return severityCounts.getOrDefault("MINOR", 0);
+    }
+
+    public int getInfoCount() {
+        return severityCounts.getOrDefault("INFO", 0);
+    }
+
+    public int getHighCount() {
+        return severityCounts.getOrDefault("HIGH", 0);
+    }
+
+    public int getMediumCount() {
+        return severityCounts.getOrDefault("MEDIUM", 0);
+    }
+
+    public int getLowCount() {
+        return severityCounts.getOrDefault("LOW", 0);
+    }
+
+    public int getAnalyzedFilesCount() {
+        return filesAnalyzed;
+    }
 }

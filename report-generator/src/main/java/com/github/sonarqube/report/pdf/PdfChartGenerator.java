@@ -179,7 +179,7 @@ public class PdfChartGenerator {
         chart.getStyler().setSeriesColors(getSeverityColors());
         chart.getStyler().setLegendVisible(true);
         chart.getStyler().setLabelsVisible(true);
-        chart.getStyler().setLabelsFontSize(12f);
+        // Note: setLabelsFontSize() removed - not available in XChart 3.8.5
         chart.getStyler().setChartBackgroundColor(Color.WHITE);
         chart.getStyler().setPlotBackgroundColor(Color.WHITE);
 

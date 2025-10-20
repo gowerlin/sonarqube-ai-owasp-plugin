@@ -125,8 +125,7 @@ class AllProvidersIntegrationTest {
         assertThat(service.getProviderName()).isEqualTo("Google Gemini CLI");
 
         // 測試程式碼分析
-        AiRequest request = AiRequest.builder()
-            .code(TEST_CODE)
+        AiRequest request = AiRequest.builder(TEST_CODE)
             .fileName("LoginController.java")
             .language("java")
             .build();
@@ -165,8 +164,7 @@ class AllProvidersIntegrationTest {
         assertThat(service.getProviderName()).isEqualTo("GitHub Copilot CLI");
 
         // 測試程式碼分析
-        AiRequest request = AiRequest.builder()
-            .code(TEST_CODE)
+        AiRequest request = AiRequest.builder(TEST_CODE)
             .fileName("LoginController.java")
             .language("java")
             .build();
@@ -205,8 +203,7 @@ class AllProvidersIntegrationTest {
         assertThat(service.getProviderName()).isEqualTo("Anthropic Claude CLI");
 
         // 測試程式碼分析
-        AiRequest request = AiRequest.builder()
-            .code(TEST_CODE)
+        AiRequest request = AiRequest.builder(TEST_CODE)
             .fileName("LoginController.java")
             .language("java")
             .build();
@@ -239,8 +236,7 @@ class AllProvidersIntegrationTest {
         AiService geminiService = new com.github.sonarqube.ai.provider.gemini.GeminiCliService(
             geminiConfig, geminiExecutor);
 
-        AiRequest request = AiRequest.builder()
-            .code(SAFE_CODE)
+        AiRequest request = AiRequest.builder(SAFE_CODE)
             .fileName("SafeLogin.java")
             .build();
 
@@ -304,8 +300,7 @@ class AllProvidersIntegrationTest {
             Fix: Add authentication check
             """;
 
-        AiRequest request = AiRequest.builder()
-            .code(TEST_CODE)
+        AiRequest request = AiRequest.builder(TEST_CODE)
             .fileName("VulnerableCode.java")
             .build();
 
@@ -369,8 +364,7 @@ class AllProvidersIntegrationTest {
     @Test
     void testAllProviders_ConsistentBehavior() {
         // 測試所有 Provider 在相同配置下的行為一致性
-        AiRequest request = AiRequest.builder()
-            .code(TEST_CODE)
+        AiRequest request = AiRequest.builder(TEST_CODE)
             .fileName("Test.java")
             .language("java")
             .build();

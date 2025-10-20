@@ -96,7 +96,7 @@
                     <pluginUrl>https://github.com/your-org/sonarqube-ai-owasp-plugin</pluginUrl>
                     <pluginOrganizationName>Your Organization</pluginOrganizationName>
                     <pluginOrganizationUrl>https://your-org.com</pluginOrganizationUrl>
-                    <sonarQubeMinVersion>9.9</sonarQubeMinVersion>
+                    <pluginApiMinVersion>9.9</pluginApiMinVersion>
                     <pluginSourcesUrl>https://github.com/your-org/sonarqube-ai-owasp-plugin</pluginSourcesUrl>
                     <pluginIssueTrackerUrl>https://github.com/your-org/sonarqube-ai-owasp-plugin/issues</pluginIssueTrackerUrl>
                 </configuration>

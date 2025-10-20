@@ -94,10 +94,9 @@ class ClaudeServiceTest {
                 .apiKey("test-api-key")
                 .build();
 
-            try (ClaudeService modelService = new ClaudeService(modelConfig)) {
-                assertEquals("Anthropic", modelService.getProviderName());
-                assertEquals(model.getModelId(), modelService.getModelName());
-            }
+            ClaudeService modelService = new ClaudeService(modelConfig);
+            assertEquals("Anthropic", modelService.getProviderName());
+            assertEquals(model.getModelId(), modelService.getModelName());
         }
     }
 }

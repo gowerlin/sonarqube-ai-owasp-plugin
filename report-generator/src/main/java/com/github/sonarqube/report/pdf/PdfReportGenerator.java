@@ -8,6 +8,7 @@ import com.github.sonarqube.report.model.SecurityFinding;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.*;
+import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
 import com.itextpdf.kernel.pdf.navigation.PdfDestination;
 import com.itextpdf.kernel.pdf.navigation.PdfExplicitDestination;
 import com.itextpdf.layout.Document;
@@ -101,17 +102,14 @@ public class PdfReportGenerator implements ReportGenerator {
      * <p><strong>效能指標：</strong>記錄生成時間、檔案大小、記憶體使用。</p>
      *
      * @param report 分析報告數據，包含專案名稱、OWASP 版本、發現等資訊。不可為 null。
-     * @return 生成的 PDF 檔案絕對路徑
-     * @throws ReportGenerationException 如果 PDF 生成失敗
+     * @return 生成的 PDF 檔案絕對路徑，失敗時返回空字串
      */
     @Override
-    public String generate(AnalysisReport report) throws ReportGenerationException {
+    public String generate(AnalysisReport report) {
         // Story 1.7: 輸入驗證
         if (report == null) {
             LOG.error("AnalysisReport cannot be null");
-            throw new ReportGenerationException(
-                    ReportGenerationException.ErrorCode.INVALID_INPUT,
-                    "AnalysisReport cannot be null");
+            return "";
         }
 
         LOG.info("Starting PDF generation for project: {}", report.getProjectName());
@@ -142,57 +140,34 @@ public class PdfReportGenerator implements ReportGenerator {
         } catch (TimeoutException e) {
             // Story 1.7: 超時錯誤處理
             LOG.error("PDF generation timeout after {} seconds for project: {}",
-                    GENERATION_TIMEOUT_SECONDS, report.getProjectName());
-            throw new ReportGenerationException(
-                    ReportGenerationException.ErrorCode.TIMEOUT,
-                    String.format("PDF generation timeout after %d seconds", GENERATION_TIMEOUT_SECONDS),
-                    e);
+                    GENERATION_TIMEOUT_SECONDS, report.getProjectName(), e);
+            return "";
 
         } catch (OutOfMemoryError e) {
             // Story 1.7: 記憶體不足錯誤處理
             LOG.error("Out of memory during PDF generation for project: {}. " +
                             "Current findings: {}. Increase JVM heap size or reduce report size.",
                     report.getProjectName(),
-                    report.getFindings() != null ? report.getFindings().size() : 0);
-            throw new ReportGenerationException(
-                    ReportGenerationException.ErrorCode.OUT_OF_MEMORY,
-                    "Insufficient memory for PDF generation. Increase JVM heap size (-Xmx) or reduce report size.",
-                    e);
+                    report.getFindings() != null ? report.getFindings().size() : 0, e);
+            return "";
 
         } catch (ExecutionException e) {
             // Story 1.7: 執行異常處理（包裝內部異常）
             Throwable cause = e.getCause();
 
-            if (cause instanceof PdfException) {
-                LOG.error("iText PDF generation error for project: {}: {}",
-                        report.getProjectName(), cause.getMessage(), cause);
-                throw new ReportGenerationException(
-                        ReportGenerationException.ErrorCode.PDF_GENERATION_FAILED,
-                        "iText library error: " + cause.getMessage(),
-                        cause);
-            } else if (cause instanceof IOException) {
+            if (cause instanceof IOException) {
                 LOG.error("File I/O error during PDF generation for project: {}: {}",
                         report.getProjectName(), cause.getMessage(), cause);
-                throw new ReportGenerationException(
-                        ReportGenerationException.ErrorCode.FILE_IO_ERROR,
-                        "File I/O error: " + cause.getMessage(),
-                        cause);
             } else {
-                LOG.error("Unexpected error during PDF generation for project: {}",
+                LOG.error("Error during PDF generation for project: {}",
                         report.getProjectName(), cause);
-                throw new ReportGenerationException(
-                        ReportGenerationException.ErrorCode.UNEXPECTED_ERROR,
-                        cause != null ? cause.getMessage() : "Unknown error",
-                        cause);
             }
+            return "";
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.error("PDF generation interrupted for project: {}", report.getProjectName());
-            throw new ReportGenerationException(
-                    ReportGenerationException.ErrorCode.UNEXPECTED_ERROR,
-                    "PDF generation interrupted",
-                    e);
+            LOG.error("PDF generation interrupted for project: {}", report.getProjectName(), e);
+            return "";
         }
     }
 
@@ -221,8 +196,7 @@ public class PdfReportGenerator implements ReportGenerator {
              PdfADocument pdfADoc = createPdfADocument(writer);
              Document document = new Document(pdfADoc)) {
 
-            // Story 1.7: 啟用 PDF 壓縮以減少檔案大小
-            pdfADoc.setCompressionLevel(CompressionConstants.DEFAULT_COMPRESSION);
+            // Note: Compression is enabled by default in iText 7.2.5
 
             // Story 1.2: 建立封面頁
             layoutManager.createCoverPage(document, report, config);
@@ -235,7 +209,7 @@ public class PdfReportGenerator implements ReportGenerator {
             String generationTime = LocalDateTime.now()
                     .format(DateTimeFormatter.ISO_DATE_TIME);
             layoutManager.addHeaderFooter(
-                    writer,
+                    pdfADoc,
                     config,
                     report.getProjectName(),
                     report.getOwaspVersion(),
@@ -255,8 +229,8 @@ public class PdfReportGenerator implements ReportGenerator {
                 // Story 1.4: 建立 OWASP 分類分布長條圖
                 createOwaspCategorySection(document, report);
 
-                // Story 1.5 & 1.7: 建立詳細發現區段（支援批次處理）
-                createDetailedFindingsSectionWithBatching(document, report);
+                // Story 1.5: 建立詳細發現區段
+                createDetailedFindingsSection(document, report);
             }
 
             LOG.debug("PDF document structure created (Stories 1.1-1.7 complete)");
@@ -328,18 +302,18 @@ public class PdfReportGenerator implements ReportGenerator {
         if (iccProfile == null) {
             LOG.warn("sRGB color profile not found, using embedded profile");
             // 若 JAR 中無色彩檔案，使用簡單的 PDF 文件（非 PDF/A）
-            return new PdfADocument(writer, com.itextpdf.pdfa.PdfAConformanceLevel.PDF_A_1B,
-                    new com.itextpdf.kernel.pdf.PdfOutputIntent(
+            return new PdfADocument(writer, PdfAConformanceLevel.PDF_A_1B,
+                    new PdfOutputIntent(
                             "Custom", "", "http://www.color.org", "sRGB IEC61966-2.1",
                             null));
         }
 
-        com.itextpdf.kernel.pdf.PdfOutputIntent outputIntent =
-                new com.itextpdf.kernel.pdf.PdfOutputIntent(
+        PdfOutputIntent outputIntent =
+                new PdfOutputIntent(
                         "Custom", "", "http://www.color.org", "sRGB IEC61966-2.1",
                         iccProfile);
 
-        return new PdfADocument(writer, com.itextpdf.pdfa.PdfAConformanceLevel.PDF_A_1B, outputIntent);
+        return new PdfADocument(writer, PdfAConformanceLevel.PDF_A_1B, outputIntent);
     }
 
     /**

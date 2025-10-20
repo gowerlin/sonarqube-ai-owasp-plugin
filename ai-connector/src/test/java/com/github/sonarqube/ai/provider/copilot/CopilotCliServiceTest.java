@@ -110,8 +110,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("SELECT * FROM users WHERE id = " + userId)
+        AiRequest request = AiRequest.builder("SELECT * FROM users WHERE id = ' + userId + '")
             .fileName("UserController.java")
             .language("java")
             .build();
@@ -148,8 +147,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// crypto code")
+        AiRequest request = AiRequest.builder("// crypto code")
             .fileName("CryptoUtils.java")
             .build();
 
@@ -168,8 +166,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("public String safeMethod() { return \"safe\"; }")
+        AiRequest request = AiRequest.builder("public String safeMethod() { return \"safe\"; }")
             .fileName("SafeClass.java")
             .build();
 
@@ -186,8 +183,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// safe code")
+        AiRequest request = AiRequest.builder("// safe code")
             .fileName("test.java")
             .build();
 
@@ -207,8 +203,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// auth code")
+        AiRequest request = AiRequest.builder("// auth code")
             .fileName("AuthService.java")
             .build();
 
@@ -225,8 +220,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn("No security vulnerabilities detected.");
 
-        AiRequest request = AiRequest.builder()
-            .code("// test code")
+        AiRequest request = AiRequest.builder("// test code")
             .fileName("test.java")
             .language("java")
             .build();
@@ -261,8 +255,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn("");
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -276,8 +269,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenThrow(new CliExecutionException("CLI execution failed", 1, "gh copilot", "", "error"));
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -291,8 +283,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenThrow(new IOException("I/O error"));
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -306,8 +297,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenThrow(new InterruptedException("Interrupted"));
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -329,7 +319,7 @@ class CopilotCliServiceTest {
     }
 
     @Test
-    void testTestConnectionFailureCliNotAvailable() {
+    void testTestConnectionFailureCliNotAvailable() throws Exception {
         when(mockExecutor.isCliAvailable()).thenReturn(false);
 
         boolean result = service.testConnection();
@@ -367,8 +357,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -390,8 +379,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// code")
+        AiRequest request = AiRequest.builder("// code")
             .fileName("test.java")
             .build();
 
@@ -417,8 +405,7 @@ class CopilotCliServiceTest {
         when(mockExecutor.executeCommand(any(String[].class), eq(null)))
             .thenReturn(cliOutput);
 
-        AiRequest request = AiRequest.builder()
-            .code("// config code")
+        AiRequest request = AiRequest.builder("// config code")
             .fileName("Config.java")
             .build();
 

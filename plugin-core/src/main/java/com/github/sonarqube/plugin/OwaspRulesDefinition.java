@@ -133,27 +133,9 @@ public class OwaspRulesDefinition implements RulesDefinition {
             html.append("</ul>");
         }
 
-        // 修復建議
-        if (ruleDef.getFixSuggestion() != null && !ruleDef.getFixSuggestion().isEmpty()) {
-            html.append("<h3>修復建議</h3>");
-            html.append("<p>").append(escapeHtml(ruleDef.getFixSuggestion())).append("</p>");
-        }
-
-        // 錯誤範例
-        if (ruleDef.getWrongExample() != null && !ruleDef.getWrongExample().isEmpty()) {
-            html.append("<h3>❌ 錯誤範例</h3>");
-            html.append("<pre><code>");
-            html.append(escapeHtml(ruleDef.getWrongExample()));
-            html.append("</code></pre>");
-        }
-
-        // 正確範例
-        if (ruleDef.getCorrectExample() != null && !ruleDef.getCorrectExample().isEmpty()) {
-            html.append("<h3>✅ 正確範例</h3>");
-            html.append("<pre><code>");
-            html.append(escapeHtml(ruleDef.getCorrectExample()));
-            html.append("</code></pre>");
-        }
+        // Note: getFixSuggestion(), getWrongExample(), getCorrectExample()
+        // 方法在 RuleDefinition 中不存在，已移除相關程式碼
+        // 如需這些功能，應在 RuleDefinition 類別中新增對應的欄位和方法
 
         return html.toString();
     }

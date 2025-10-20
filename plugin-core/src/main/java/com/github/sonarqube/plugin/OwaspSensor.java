@@ -1,6 +1,10 @@
 package com.github.sonarqube.plugin;
 
-import com.github.sonarqube.ai.AiConnector;
+import com.github.sonarqube.ai.AiService;
+import com.github.sonarqube.ai.AiServiceFactory;
+import com.github.sonarqube.ai.model.AiConfig;
+import com.github.sonarqube.ai.model.AiExecutionMode;
+import com.github.sonarqube.ai.model.AiModel;
 import com.github.sonarqube.ai.model.AiRequest;
 import com.github.sonarqube.ai.model.AiResponse;
 import com.github.sonarqube.ai.model.SecurityIssue;
@@ -42,15 +46,54 @@ public class OwaspSensor implements Sensor {
     private static final Logger LOG = Loggers.get(OwaspSensor.class);
 
     private final PluginConfiguration config;
-    private final AiConnector aiConnector;
+    private final AiService aiService;
     private final Map<String, RuleDefinition> ruleMap;
 
     public OwaspSensor() {
         this.config = PluginConfiguration.getInstance();
-        this.aiConnector = new AiConnector();
+        this.aiService = AiServiceFactory.createService(convertToAiConfig(config));
 
         // 建立規則映射表以便快速查詢
         this.ruleMap = buildRuleMap();
+    }
+
+    /**
+     * 將 PluginConfiguration 轉換為 AiConfig
+     *
+     * @param pluginConfig 插件配置
+     * @return AI 配置物件
+     */
+    private AiConfig convertToAiConfig(PluginConfiguration pluginConfig) {
+        // 從環境變數或系統屬性取得 API Key
+        String apiKey = System.getenv("AI_API_KEY");
+        if (apiKey == null) {
+            apiKey = System.getProperty("ai.api.key", "");
+        }
+
+        // 從環境變數或系統屬性取得 API Endpoint
+        String apiEndpoint = System.getenv("AI_API_ENDPOINT");
+        if (apiEndpoint == null) {
+            apiEndpoint = System.getProperty("ai.api.endpoint", "");
+        }
+
+        // 從模型 ID 字串轉換為 AiModel 枚舉，如果找不到則使用 GPT-4 作為預設值
+        AiModel model = AiModel.fromModelId(pluginConfig.getAiModel());
+        if (model == null) {
+            LOG.warn("無法識別的 AI 模型 ID: {}，使用預設模型 GPT-4", pluginConfig.getAiModel());
+            model = AiModel.GPT_4;
+        }
+
+        return AiConfig.builder()
+            .model(model)
+            .apiKey(apiKey)
+            .apiEndpoint(apiEndpoint)
+            .timeoutSeconds(pluginConfig.getAiTimeout() / 1000)
+            .temperature(0.3)  // 預設值：較保守的創造性
+            .maxTokens(4096)   // 預設值：標準 token 限制
+            .maxRetries(3)     // 預設值：重試 3 次
+            .retryDelayMs(1000L)  // 預設值：重試延遲 1 秒
+            .executionMode(AiExecutionMode.API)  // 預設值：API 模式
+            .build();
     }
 
     @Override
@@ -112,25 +155,29 @@ public class OwaspSensor implements Sensor {
         // 讀取檔案內容
         String content = new String(Files.readAllBytes(file.path()), StandardCharsets.UTF_8);
 
-        // 建立 AI 請求
-        AiRequest request = AiRequest.builder()
-                .code(content)
+        // 建立 AI 請求 (builder 需要 code 參數)
+        AiRequest request = AiRequest.builder(content)
                 .language(file.language())
                 .fileName(file.filename())
                 .analysisType("security")
                 .owaspVersion(VersionManager.getCurrentVersion().getVersion())
                 .build();
 
-        // 呼叫 AI 分析
-        AiResponse response = aiConnector.analyze(request);
+        try {
+            // 呼叫 AI 分析
+            AiResponse response = aiService.analyzeCode(request);
 
-        if (response == null || !response.isSuccess()) {
-            LOG.warn("AI 分析失敗: {}", file.uri());
+            if (response == null || !response.isSuccess()) {
+                LOG.warn("AI 分析失敗: {}", file.uri());
+                return List.of();
+            }
+
+            // 解析安全問題 (正確的方法名是 getIssues)
+            return response.getIssues();
+        } catch (com.github.sonarqube.ai.AiException e) {
+            LOG.error("AI 分析發生異常: {} - {}", file.uri(), e.getMessage());
             return List.of();
         }
-
-        // 解析安全問題
-        return response.getSecurityIssues();
     }
 
     /**

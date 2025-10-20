@@ -100,8 +100,7 @@ class GeminiApiServiceTest {
     void testAnalyzeCodeWithEmptyCode() {
         GeminiApiService service = new GeminiApiService(config);
 
-        AiRequest request = AiRequest.builder()
-            .code("")
+        AiRequest request = AiRequest.builder("")
             .fileName("test.java")
             .build();
 

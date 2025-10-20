@@ -77,12 +77,24 @@
             <artifactId>layout</artifactId>
             <version>7.2.5</version>
         </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>pdfa</artifactId>
+            <version>7.2.5</version>
+        </dependency>
 
         <!-- 圖表生成 (XChart) - Story 1.4 -->
         <dependency>
             <groupId>org.knowm.xchart</groupId>
             <artifactId>xchart</artifactId>
             <version>3.8.5</version>
+            <exclusions>
+                <!-- commons-logging 由 SonarQube 提供，不需要打包 -->
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- 測試依賴 -->

@@ -71,19 +71,23 @@ public class PromptInjectionRule extends AbstractOwaspRule {
     );
 
     public PromptInjectionRule() {
-        super(
-            RULE_ID,
-            RULE_NAME,
-            DESCRIPTION,
-            "A03",  // OWASP 2025 A03: Injection (擴展包含 Prompt Injection)
-            "2025",  // OWASP 2025
-            List.of("CWE-1236", "CWE-20", "CWE-74", "CWE-77", "CWE-94")  // 5 個相關 CWE
-        );
-    }
-
-    @Override
-    public String getDefaultSeverity() {
-        return "CRITICAL";  // 提示詞注入是 AI/LLM 的最高風險
+        super(RuleDefinition.builder(RULE_ID)
+            .name(RULE_NAME)
+            .description(DESCRIPTION)
+            .severity(RuleDefinition.RuleSeverity.CRITICAL)
+            .type(RuleDefinition.RuleType.VULNERABILITY)
+            .language("java")
+            .tag("owasp-2025")
+            .tag("security")
+            .tag("ai")
+            .tag("llm")
+            .tag("prompt-injection")
+            .cweId("CWE-1236")
+            .cweId("CWE-20")
+            .cweId("CWE-74")
+            .cweId("CWE-77")
+            .cweId("CWE-94")
+            .build());
     }
 
     @Override
@@ -102,9 +106,8 @@ public class PromptInjectionRule extends AbstractOwaspRule {
     }
 
     @Override
-    public RuleResult execute(RuleContext context) {
-        RuleResult.Builder resultBuilder = RuleResult.builder()
-            .ruleId(getRuleId())
+    protected RuleResult doExecute(RuleContext context) {
+        RuleResult.Builder resultBuilder = RuleResult.builder(getRuleId())
             .success(true);
 
         String code = context.getCode();
@@ -123,7 +126,7 @@ public class PromptInjectionRule extends AbstractOwaspRule {
         violations.addAll(detectTrainingDataPoisoning(code));
 
         if (!violations.isEmpty()) {
-            violations.forEach(resultBuilder::addViolation);
+            resultBuilder.violations(violations);
         }
 
         return resultBuilder.build();
@@ -141,8 +144,7 @@ public class PromptInjectionRule extends AbstractOwaspRule {
                 violations.add(createViolation(
                     lineNumber,
                     "Direct Prompt Injection: 使用者輸入直接串接至提示詞，可能導致提示詞注入攻擊",
-                    "CRITICAL",
-                    getCodeSnippet(code, lineNumber),
+                    code,
                     "建議修復：\n" +
                         "1. 使用結構化提示詞（JSON 格式，分離 system 與 user 訊息）\n" +
                         "2. 實現輸入驗證與消毒（過濾特殊字元如 '\\n', '\\r', '<|im_end|>' 等）\n" +
@@ -176,8 +178,7 @@ public class PromptInjectionRule extends AbstractOwaspRule {
                 violations.add(createViolation(
                     lineNumber,
                     "System Prompt Bypass: 系統提示詞與使用者輸入未正確隔離，可能被繞過",
-                    "HIGH",
-                    getCodeSnippet(code, lineNumber),
+                    code,
                     "建議修復：\n" +
                         "1. 使用 ChatML 格式明確區分 system 和 user 角色\n" +
                         "2. 實現提示詞注入攻擊偵測（檢查 '忽略以上指示' 等模式）\n" +
@@ -210,8 +211,7 @@ public class PromptInjectionRule extends AbstractOwaspRule {
                 violations.add(createViolation(
                     lineNumber,
                     "Excessive Agency: LLM 被賦予過多權限（如執行系統命令），存在高風險",
-                    "CRITICAL",
-                    getCodeSnippet(code, lineNumber),
+                    code,
                     "建議修復：\n" +
                         "1. 實現最小權限原則（只賦予 LLM 必要的 API 權限）\n" +
                         "2. 使用白名單限制 LLM 可調用的函式\n" +
@@ -250,8 +250,7 @@ public class PromptInjectionRule extends AbstractOwaspRule {
                 violations.add(createViolation(
                     lineNumber,
                     "Training Data Poisoning: 使用者輸入直接用於 AI 訓練，可能導致模型投毒攻擊",
-                    "HIGH",
-                    getCodeSnippet(code, lineNumber),
+                    code,
                     "建議修復：\n" +
                         "1. 實現訓練資料驗證與過濾機制\n" +
                         "2. 使用資料來源白名單（只接受可信來源）\n" +

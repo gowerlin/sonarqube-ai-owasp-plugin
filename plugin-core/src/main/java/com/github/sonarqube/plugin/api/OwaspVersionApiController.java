@@ -90,36 +90,35 @@ public class OwaspVersionApiController implements WebService {
      * 定義版本切換 API
      */
     private void defineSwitchAction(NewController controller) {
-        controller.createAction("version/switch")
+        NewAction switchAction = controller.createAction("version/switch")
             .setDescription("Switch OWASP version")
             .setSince("2.2.0")
             .setPost(true)
-            .createParam("version")
+            .setHandler(this::handleSwitchAction);
+
+        switchAction.createParam("version")
                 .setRequired(true)
                 .setDescription("Target OWASP version (2017 or 2021)")
-                .setExampleValue("2021")
-            .and()
-            .setHandler(this::handleSwitchAction);
+                .setExampleValue("2021");
     }
 
     /**
      * 定義版本映射 API
      */
     private void defineMappingsAction(NewController controller) {
-        controller.createAction("version/mappings")
+        NewAction mappingsAction = controller.createAction("version/mappings")
             .setDescription("Get OWASP version mappings (2017 ↔ 2021)")
             .setSince("2.2.0")
-            .createParam("sourceVersion")
+            .setHandler(this::handleMappingsAction);
+
+        mappingsAction.createParam("sourceVersion")
                 .setRequired(false)
                 .setDescription("Source version to filter mappings")
-                .setExampleValue("2017")
-            .and()
-            .createParam("sourceCategory")
+                .setExampleValue("2017");
+        mappingsAction.createParam("sourceCategory")
                 .setRequired(false)
                 .setDescription("Source category to filter mappings")
-                .setExampleValue("A1")
-            .and()
-            .setHandler(this::handleMappingsAction);
+                .setExampleValue("A1");
     }
 
     /**

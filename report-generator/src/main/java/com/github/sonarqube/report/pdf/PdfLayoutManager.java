@@ -226,7 +226,7 @@ public class PdfLayoutManager {
      * @param owaspVersion OWASP 版本（顯示於頁尾右側）
      * @param generationTime 報表生成時間（顯示於頁尾左側，ISO 8601 格式）
      */
-    public void addHeaderFooter(PdfWriter writer, PdfReportConfig config,
+    public void addHeaderFooter(PdfDocument pdfDoc, PdfReportConfig config,
                                  String projectName, String owaspVersion,
                                  String generationTime) {
         LOG.info("Registering header/footer event handler");
@@ -240,7 +240,7 @@ public class PdfLayoutManager {
         PdfPageEventHandler eventHandler = new PdfPageEventHandler(
                 config, skipPages, projectName, owaspVersion, generationTime);
 
-        writer.getPdfDocument().addEventHandler(PdfDocumentEvent.END_PAGE, eventHandler);
+        pdfDoc.addEventHandler(PdfDocumentEvent.END_PAGE, eventHandler);
 
         LOG.info("Header/footer event handler registered (skip first {} pages)", skipPages);
     }

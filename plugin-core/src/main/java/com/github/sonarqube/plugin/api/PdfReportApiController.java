@@ -124,9 +124,13 @@ public class PdfReportApiController implements WebService {
         } catch (Exception e) {
             LOG.error("Failed to export report: format={}, project={}", format, projectKey, e);
             response.stream().setStatus(500);
-            response.stream().output().write(
-                    String.format("{\"error\": \"Failed to export report: %s\"}", e.getMessage()).getBytes()
-            );
+            try {
+                response.stream().output().write(
+                        String.format("{\"error\": \"Failed to export report: %s\"}", e.getMessage()).getBytes()
+                );
+            } catch (IOException ioException) {
+                LOG.error("Failed to write error response", ioException);
+            }
         }
     }
 
@@ -300,7 +304,7 @@ public class PdfReportApiController implements WebService {
                 .owaspVersion("2021")
                 .analysisTime(java.time.LocalDateTime.now())
                 .findings(java.util.Collections.emptyList())
-                .reportSummary(com.github.sonarqube.report.model.ReportSummary.builder()
+                .summary(com.github.sonarqube.report.model.ReportSummary.builder()
                         .totalFindings(0)
                         .build())
                 .build();

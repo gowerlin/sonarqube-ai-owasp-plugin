@@ -36,7 +36,7 @@ import java.util.*;
  */
 public class Owasp2025RuleConfigLoader {
 
-    private static final Logger logger = LoggerFactory.getLogger(Owasp2025RuleConfigLoader.java);
+    private static final Logger logger = LoggerFactory.getLogger(Owasp2025RuleConfigLoader.class);
     private static final String CONFIG_FILE = "owasp2025-rules.yaml";
 
     /**

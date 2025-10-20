@@ -116,4 +116,9 @@ public class SecurityFinding {
     public String getDescription() { return description; }
     public String getFixSuggestion() { return fixSuggestion; }
     public String getCodeSnippet() { return codeSnippet; }
+
+    // Convenience method for backward compatibility
+    public String getCweId() {
+        return cweIds != null && !cweIds.isEmpty() ? cweIds.get(0) : "";
+    }
 }
