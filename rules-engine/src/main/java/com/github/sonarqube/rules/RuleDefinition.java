@@ -73,9 +73,9 @@ public class RuleDefinition {
         private String description;
         private RuleSeverity severity = RuleSeverity.MAJOR;
         private RuleType type = RuleType.VULNERABILITY;
-        private List<String> tags = Collections.emptyList();
+        private final java.util.ArrayList<String> tags = new java.util.ArrayList<>();
         private Owasp2021Category owaspCategory;
-        private List<String> cweIds = Collections.emptyList();
+        private final java.util.ArrayList<String> cweIds = new java.util.ArrayList<>();
         private String language;
         private String remediationFunction = "CONSTANT_ISSUE";
         private String remediationCost = "10min";
@@ -104,8 +104,30 @@ public class RuleDefinition {
             return this;
         }
 
+        /**
+         * 設定標籤列表（替換現有的）
+         *
+         * @param tags 標籤列表
+         * @return Builder 實例
+         */
         public Builder tags(List<String> tags) {
-            this.tags = tags != null ? List.copyOf(tags) : Collections.emptyList();
+            this.tags.clear();
+            if (tags != null) {
+                this.tags.addAll(tags);
+            }
+            return this;
+        }
+
+        /**
+         * 添加單一標籤（支援連續呼叫）
+         *
+         * @param tag 標籤名稱（例如 "owasp-2021", "security"）
+         * @return Builder 實例
+         */
+        public Builder tag(String tag) {
+            if (tag != null && !tag.trim().isEmpty()) {
+                this.tags.add(tag);
+            }
             return this;
         }
 
@@ -114,8 +136,43 @@ public class RuleDefinition {
             return this;
         }
 
+        /**
+         * 設定 OWASP 分類（透過 String ID）
+         *
+         * @param categoryId OWASP 分類 ID（例如 "A01", "A03:2021"）
+         * @return Builder 實例
+         */
+        public Builder owaspCategory(String categoryId) {
+            if (categoryId != null) {
+                this.owaspCategory = Owasp2021Category.fromCategoryId(categoryId);
+            }
+            return this;
+        }
+
+        /**
+         * 設定 CWE ID 列表（替換現有的）
+         *
+         * @param cweIds CWE ID 列表
+         * @return Builder 實例
+         */
         public Builder cweIds(List<String> cweIds) {
-            this.cweIds = cweIds != null ? List.copyOf(cweIds) : Collections.emptyList();
+            this.cweIds.clear();
+            if (cweIds != null) {
+                this.cweIds.addAll(cweIds);
+            }
+            return this;
+        }
+
+        /**
+         * 添加單一 CWE ID（支援連續呼叫）
+         *
+         * @param cweId CWE ID（例如 "CWE-20"）
+         * @return Builder 實例
+         */
+        public Builder cweId(String cweId) {
+            if (cweId != null && !cweId.trim().isEmpty()) {
+                this.cweIds.add(cweId);
+            }
             return this;
         }
 

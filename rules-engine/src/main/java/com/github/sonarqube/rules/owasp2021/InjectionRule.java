@@ -83,8 +83,7 @@ public class InjectionRule extends AbstractOwaspRule {
     }
 
     private static RuleDefinition createRuleDefinition() {
-        return RuleDefinition.builder()
-            .ruleKey(RULE_ID)
+        return RuleDefinition.builder(RULE_ID)
             .name(RULE_NAME)
             .description(DESCRIPTION)
             .severity(RuleDefinition.RuleSeverity.BLOCKER)

@@ -40,8 +40,7 @@ public class InsecureDesignRule extends AbstractOwaspRule {
     }
 
     private static RuleDefinition createRuleDefinition() {
-        return RuleDefinition.builder()
-            .ruleKey(RULE_ID)
+        return RuleDefinition.builder(RULE_ID)
             .name("Insecure Design Detection")
             .description("Detects insecure design patterns")
             .severity(RuleDefinition.RuleSeverity.MAJOR)

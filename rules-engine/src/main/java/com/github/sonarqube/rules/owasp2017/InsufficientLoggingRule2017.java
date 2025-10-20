@@ -14,9 +14,7 @@ public class InsufficientLoggingRule2017 extends AbstractOwaspRule {
     private static final Pattern LOG_INJECTION = Pattern.compile("log\\.(?:info|warn|error).*(?:\\+|concat).*(?:request\\.|params\\.)", Pattern.CASE_INSENSITIVE);
 
     public InsufficientLoggingRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A10: Insufficient Logging & Monitoring").description("Detects logging issues")
-            .severity(RuleDefinition.RuleSeverity.MAJOR).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A10").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-778").cweId("CWE-117")
             .language("java").tag("owasp-2017").tag("logging").build());
     }

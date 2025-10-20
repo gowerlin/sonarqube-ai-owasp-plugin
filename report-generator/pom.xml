@@ -35,6 +35,10 @@
             <groupId>com.github.sonarqube</groupId>
             <artifactId>version-manager</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>rules-engine</artifactId>
+        </dependency>
 
         <!-- SonarQube Plugin API -->
         <dependency>
@@ -62,9 +66,15 @@
         </dependency>
 
         <!-- PDF 生成 (iText 7) - Story 1.1 -->
+        <!-- iText 7 核心模組 -->
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
+            <artifactId>kernel</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
             <version>7.2.5</version>
         </dependency>
 

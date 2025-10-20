@@ -12,10 +12,10 @@
     </parent>
 
     <artifactId>rules-engine</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <name>Rules Engine</name>
-    <description>OWASP 規則引擎父模組</description>
+    <description>OWASP 規則引擎模組</description>
 
     <!-- 子模組已移至 plugin-core，此處保留為預留架構 -->
     <!--
@@ -35,6 +35,17 @@
         <dependency>
             <groupId>com.github.sonarqube</groupId>
             <artifactId>config-manager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sonarqube</groupId>
+            <artifactId>ai-connector</artifactId>
+        </dependency>
+
+        <!-- YAML 處理 -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.0</version>
         </dependency>
 
         <!-- SonarQube Plugin API -->

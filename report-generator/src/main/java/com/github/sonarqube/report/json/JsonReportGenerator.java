@@ -213,7 +213,7 @@ public class JsonReportGenerator implements ReportGenerator {
      *   <li>\n (line feed)</li>
      *   <li>\r (carriage return)</li>
      *   <li>\t (tab)</li>
-     *   <li>\uXXXX (unicode)</li>
+     *   <li>\\uXXXX (unicode)</li>
      * </ul>
      *
      * @param text 原始字串

@@ -1,5 +1,7 @@
 package com.github.sonarqube.rules;
 
+import com.github.sonarqube.rules.owasp.Owasp2021Category;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -38,7 +40,8 @@ public abstract class AbstractOwaspRule implements OwaspRule {
 
     @Override
     public String getOwaspCategory() {
-        return ruleDefinition.getOwaspCategory();
+        Owasp2021Category category = ruleDefinition.getOwaspCategory();
+        return category != null ? category.getCategoryId() : "Unknown";
     }
 
     @Override

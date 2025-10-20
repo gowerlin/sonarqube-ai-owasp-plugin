@@ -13,9 +13,7 @@ public class InsecureDeserializationRule2017 extends AbstractOwaspRule {
     private static final Pattern UNSAFE_DESERIALIZATION = Pattern.compile("(?:ObjectInputStream|readObject|readUnshared|XMLDecoder)", Pattern.CASE_INSENSITIVE);
 
     public InsecureDeserializationRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A8: Insecure Deserialization").description("Detects insecure deserialization")
-            .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A8").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-502")
             .language("java").tag("owasp-2017").tag("deserialization").build());
     }

@@ -14,9 +14,7 @@ public class SecurityMisconfigurationRule2017 extends AbstractOwaspRule {
     private static final Pattern DEFAULT_CREDENTIALS = Pattern.compile("(?:admin|root).*(?:admin|root|password)", Pattern.CASE_INSENSITIVE);
 
     public SecurityMisconfigurationRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A6: Security Misconfiguration").description("Detects security misconfigurations")
-            .severity(RuleDefinition.RuleSeverity.MAJOR).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A6").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-2").cweId("CWE-16").cweId("CWE-798")
             .language("java").tag("owasp-2017").tag("config").build());
     }

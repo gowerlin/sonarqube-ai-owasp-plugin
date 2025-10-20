@@ -3,7 +3,6 @@ package com.github.sonarqube.ai.model;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * AI 回應封裝
@@ -51,6 +50,19 @@ public class AiResponse {
         return issues;
     }
 
+    /**
+     * 取得發現列表（別名方法，用於 CLI 服務相容性）
+     *
+     * 注意：此方法返回空列表，因為 SecurityIssue 無法反向轉換為 Finding。
+     * CLI 服務應該在建構時直接使用 findings() 方法。
+     *
+     * @return 空列表
+     */
+    public List<Finding> getFindings() {
+        // 無法將 SecurityIssue 反向轉換為 Finding，返回空列表
+        return Collections.emptyList();
+    }
+
     public String getFixSuggestion() {
         return fixSuggestion;
     }
@@ -77,6 +89,15 @@ public class AiResponse {
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    /**
+     * 建立 Builder 實例（預設為成功）
+     *
+     * @return Builder 實例
+     */
+    public static Builder builder() {
+        return new Builder(true);
     }
 
     /**
@@ -127,6 +148,34 @@ public class AiResponse {
             return this;
         }
 
+        /**
+         * 設定發現列表（findings 別名，相容 CLI 服務）
+         *
+         * @param findings 發現列表
+         * @return Builder 實例
+         */
+        public Builder findings(List<Finding> findings) {
+            if (findings != null && !findings.isEmpty()) {
+                this.issues = new java.util.ArrayList<>();
+                for (Finding finding : findings) {
+                    this.issues.add(finding.toSecurityIssue());
+                }
+            }
+            return this;
+        }
+
+        /**
+         * 設定原始回應（相容 CLI 服務）
+         *
+         * @param rawResponse 原始回應
+         * @return Builder 實例
+         */
+        public Builder rawResponse(String rawResponse) {
+            // 將原始回應存儲在 analysisResult 中
+            this.analysisResult = rawResponse;
+            return this;
+        }
+
         public Builder fixSuggestion(String fixSuggestion) {
             this.fixSuggestion = fixSuggestion;
             return this;
@@ -167,51 +216,6 @@ public class AiResponse {
         }
     }
 
-    /**
-     * 安全問題資料類別
-     */
-    public static class SecurityIssue {
-        private final String owaspCategory;
-        private final String cweId;
-        private final String severity;
-        private final String description;
-        private final int lineNumber;
-
-        public SecurityIssue(String owaspCategory, String cweId, String severity,
-                           String description, int lineNumber) {
-            this.owaspCategory = Objects.requireNonNull(owaspCategory);
-            this.cweId = cweId;
-            this.severity = Objects.requireNonNull(severity);
-            this.description = Objects.requireNonNull(description);
-            this.lineNumber = lineNumber;
-        }
-
-        public String getOwaspCategory() {
-            return owaspCategory;
-        }
-
-        public String getCweId() {
-            return cweId;
-        }
-
-        public String getSeverity() {
-            return severity;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public int getLineNumber() {
-            return lineNumber;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("SecurityIssue[owasp=%s, cwe=%s, severity=%s, line=%d]",
-                owaspCategory, cweId, severity, lineNumber);
-        }
-    }
 
     @Override
     public String toString() {

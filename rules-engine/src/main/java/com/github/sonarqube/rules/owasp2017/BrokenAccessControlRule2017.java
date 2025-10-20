@@ -15,9 +15,7 @@ public class BrokenAccessControlRule2017 extends AbstractOwaspRule {
     private static final Pattern UNSAFE_REDIRECT = Pattern.compile("(?:sendRedirect|redirect:)\\s*\\(\\s*(?:request\\.|params\\.)", Pattern.CASE_INSENSITIVE);
 
     public BrokenAccessControlRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A5: Broken Access Control").description("Detects access control issues")
-            .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A5").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-22").cweId("CWE-284").cweId("CWE-601")
             .language("java").tag("owasp-2017").tag("access-control").build());
     }

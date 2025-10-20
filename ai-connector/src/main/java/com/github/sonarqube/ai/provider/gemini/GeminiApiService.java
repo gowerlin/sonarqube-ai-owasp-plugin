@@ -146,17 +146,11 @@ public class GeminiApiService implements AiService {
             .addUserMessage(prompt);
 
         // 設定生成參數
-        if (config.getTemperature() != null) {
-            builder.temperature(config.getTemperature());
-        } else {
-            builder.temperature(0.3f); // 安全分析建議較低的 temperature
-        }
+        // config.getTemperature() 返回 double，需要轉換為 float
+        builder.temperature((float) config.getTemperature());
 
-        if (config.getMaxTokens() != null) {
-            builder.maxTokens(config.getMaxTokens());
-        } else {
-            builder.maxTokens(2000); // 預設 2000 tokens
-        }
+        // config.getMaxTokens() 返回 int，需要轉換為 Integer
+        builder.maxTokens(config.getMaxTokens());
 
         // 設定安全過濾器（放寬以允許安全分析內容）
         builder.addSafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_ONLY_HIGH")
@@ -242,7 +236,7 @@ public class GeminiApiService implements AiService {
         if (responseText == null || responseText.trim().isEmpty()) {
             LOG.warn("Gemini API returned empty response");
             return AiResponse.builder()
-                .findings(findings)
+                .issues(findings)
                 .rawResponse(responseText)
                 .build();
         }
@@ -256,9 +250,8 @@ public class GeminiApiService implements AiService {
         LOG.info("Gemini API analysis completed: {} findings", findings.size());
 
         return AiResponse.builder()
-            .findings(findings)
+            .issues(findings)
             .rawResponse(responseText)
-            .confidence(0.85f) // Gemini 的建議信心度
             .build();
     }
 

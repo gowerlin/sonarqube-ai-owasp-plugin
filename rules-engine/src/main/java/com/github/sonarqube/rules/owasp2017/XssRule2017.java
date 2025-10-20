@@ -14,11 +14,18 @@ public class XssRule2017 extends AbstractOwaspRule {
     private static final Pattern UNSAFE_EVAL = Pattern.compile("eval\\s*\\(.*(?:request\\.|params\\.|user)", Pattern.CASE_INSENSITIVE);
 
     public XssRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A7: Cross-Site Scripting (XSS)").description("Detects XSS vulnerabilities")
-            .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A7").owaspVersion("2017")
-            .cweId("CWE-79").cweId("CWE-80")
-            .language("java").tag("owasp-2017").tag("xss").build());
+        super(RuleDefinition.builder(RULE_ID)
+            .name("OWASP 2017 A7: Cross-Site Scripting (XSS)")
+            .description("Detects XSS vulnerabilities")
+            .severity(RuleDefinition.RuleSeverity.CRITICAL)
+            .type(RuleDefinition.RuleType.VULNERABILITY)
+            .owaspCategory("A7")
+            .cweId("CWE-79")
+            .cweId("CWE-80")
+            .language("java")
+            .tag("owasp-2017")
+            .tag("xss")
+            .build());
     }
 
     @Override

@@ -14,8 +14,7 @@ public class AuthenticationFailuresRule extends AbstractOwaspRule {
     private static final Pattern MISSING_MFA = Pattern.compile("@PostMapping.*(?:/login|/signin)(?!.*(?:MFA|2FA|OTP))", Pattern.CASE_INSENSITIVE);
 
     public AuthenticationFailuresRule() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("Authentication Failures").description("Detects authentication weaknesses")
+        super(RuleDefinition.builder(RULE_ID)
             .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A07")
             .cweId("CWE-255").cweId("CWE-259").cweId("CWE-287").cweId("CWE-288").cweId("CWE-290").cweId("CWE-294")
             .cweId("CWE-295").cweId("CWE-297").cweId("CWE-300").cweId("CWE-302").cweId("CWE-304").cweId("CWE-306")

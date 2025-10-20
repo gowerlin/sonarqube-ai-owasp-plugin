@@ -15,9 +15,7 @@ public class BrokenAuthenticationRule2017 extends AbstractOwaspRule {
     private static final Pattern MISSING_TIMEOUT = Pattern.compile("(?:session\\.setMaxInactiveInterval).*(?:[3-9]\\d{3,}|\\d{5,})", Pattern.CASE_INSENSITIVE);
 
     public BrokenAuthenticationRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A2: Broken Authentication").description("Detects authentication issues")
-            .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A2").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-287").cweId("CWE-384").cweId("CWE-307")
             .language("java").tag("owasp-2017").tag("authentication").build());
     }

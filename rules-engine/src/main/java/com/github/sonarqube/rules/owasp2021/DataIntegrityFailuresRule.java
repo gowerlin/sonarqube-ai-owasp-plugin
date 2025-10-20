@@ -13,8 +13,7 @@ public class DataIntegrityFailuresRule extends AbstractOwaspRule {
     private static final Pattern UNSAFE_DESERIALIZATION = Pattern.compile("(?:ObjectInputStream|readObject|XMLDecoder|Yaml\\.load|JSON\\.parse).*(?:request\\.|params\\.)", Pattern.CASE_INSENSITIVE);
 
     public DataIntegrityFailuresRule() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("Data Integrity Failures").description("Detects insecure deserialization")
+        super(RuleDefinition.builder(RULE_ID)
             .severity(RuleDefinition.RuleSeverity.BLOCKER).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A08")
             .cweId("CWE-345").cweId("CWE-353").cweId("CWE-426").cweId("CWE-494").cweId("CWE-502")
             .cweId("CWE-565").cweId("CWE-784").cweId("CWE-829").cweId("CWE-830").cweId("CWE-915")

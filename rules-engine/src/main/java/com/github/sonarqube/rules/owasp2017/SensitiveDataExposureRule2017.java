@@ -15,9 +15,7 @@ public class SensitiveDataExposureRule2017 extends AbstractOwaspRule {
     private static final Pattern INSECURE_SSL = Pattern.compile("(?:SSLv2|SSLv3|TLSv1\\.0)", Pattern.CASE_INSENSITIVE);
 
     public SensitiveDataExposureRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A3: Sensitive Data Exposure").description("Detects sensitive data exposure")
-            .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A3").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-319").cweId("CWE-327").cweId("CWE-326")
             .language("java").tag("owasp-2017").tag("crypto").build());
     }

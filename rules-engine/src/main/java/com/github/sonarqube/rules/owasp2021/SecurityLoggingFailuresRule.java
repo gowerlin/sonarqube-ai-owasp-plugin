@@ -14,8 +14,7 @@ public class SecurityLoggingFailuresRule extends AbstractOwaspRule {
     private static final Pattern LOG_INJECTION = Pattern.compile("log\\.(?:info|warn|error).*(?:\\+|concat).*(?:request\\.|params\\.)", Pattern.CASE_INSENSITIVE);
 
     public SecurityLoggingFailuresRule() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("Security Logging Failures").description("Detects logging issues")
+        super(RuleDefinition.builder(RULE_ID)
             .severity(RuleDefinition.RuleSeverity.MAJOR).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A09")
             .cweId("CWE-117").cweId("CWE-223").cweId("CWE-532").cweId("CWE-778")
             .language("java").tag("owasp-2021").tag("security").tag("logging").build());

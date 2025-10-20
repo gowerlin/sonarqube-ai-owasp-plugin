@@ -13,8 +13,7 @@ public class SsrfRule extends AbstractOwaspRule {
     private static final Pattern SSRF_PATTERN = Pattern.compile("(?:HttpClient|RestTemplate|URL|URLConnection|HttpURLConnection)\\.(?:get|post|connect|openConnection).*(?:request\\.|params\\.|input\\.)", Pattern.CASE_INSENSITIVE);
 
     public SsrfRule() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("SSRF Detection").description("Detects Server-Side Request Forgery")
+        super(RuleDefinition.builder(RULE_ID)
             .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A10")
             .cweId("CWE-918")
             .language("java").tag("owasp-2021").tag("security").tag("ssrf").build());

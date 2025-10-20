@@ -50,12 +50,12 @@ public class GeminiApiResponse {
         }
 
         Candidate first = candidates.get(0);
-        if (first.content == null || first.content.parts == null || first.content.parts.isEmpty()) {
+        if (first.content == null || first.content.getParts() == null || first.content.getParts().isEmpty()) {
             return null;
         }
 
         StringBuilder sb = new StringBuilder();
-        for (GeminiApiRequest.Part part : first.content.parts) {
+        for (GeminiApiRequest.Part part : first.content.getParts()) {
             if (part.getText() != null) {
                 sb.append(part.getText());
             }

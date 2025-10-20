@@ -14,9 +14,7 @@ public class XxeRule2017 extends AbstractOwaspRule {
     private static final Pattern EXTERNAL_ENTITIES = Pattern.compile("setFeature.*FEATURE_SECURE_PROCESSING.*false", Pattern.CASE_INSENSITIVE);
 
     public XxeRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A4: XML External Entities (XXE)").description("Detects XXE vulnerabilities")
-            .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A4").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-611").cweId("CWE-827")
             .language("java").tag("owasp-2017").tag("xxe").build());
     }

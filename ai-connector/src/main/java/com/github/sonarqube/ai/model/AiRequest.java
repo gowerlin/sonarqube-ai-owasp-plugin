@@ -32,6 +32,15 @@ public class AiRequest {
         return code;
     }
 
+    /**
+     * 取得代碼片段（別名方法，指向 getCode()）
+     *
+     * @return 代碼內容
+     */
+    public String getCodeSnippet() {
+        return code;
+    }
+
     public String getFileName() {
         return fileName;
     }

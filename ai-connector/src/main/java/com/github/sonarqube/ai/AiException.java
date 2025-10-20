@@ -45,6 +45,31 @@ public class AiException extends Exception {
         this.providerName = providerName;
     }
 
+    /**
+     * 簡化建構子（使用預設錯誤類型和 provider）
+     *
+     * @param message 錯誤訊息
+     */
+    public AiException(String message) {
+        super(message);
+        this.errorType = ErrorType.UNKNOWN_ERROR;
+        this.providerName = "Unknown";
+    }
+
+    /**
+     * 簡化建構子（包含原因）
+     *
+     * @param message 錯誤訊息
+     * @param cause 原始例外
+     */
+    public AiException(String message, Throwable cause) {
+        super(message, cause);
+        this.errorType = cause instanceof java.io.IOException ? ErrorType.NETWORK_ERROR :
+                        cause instanceof java.util.concurrent.TimeoutException ? ErrorType.TIMEOUT :
+                        ErrorType.UNKNOWN_ERROR;
+        this.providerName = "Unknown";
+    }
+
     public ErrorType getErrorType() {
         return errorType;
     }

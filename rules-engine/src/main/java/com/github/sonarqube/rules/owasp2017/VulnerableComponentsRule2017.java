@@ -13,9 +13,7 @@ public class VulnerableComponentsRule2017 extends AbstractOwaspRule {
     private static final Pattern OUTDATED_DEPENDENCY = Pattern.compile("(?:SNAPSHOT|alpha|beta|rc)", Pattern.CASE_INSENSITIVE);
 
     public VulnerableComponentsRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A9: Using Components with Known Vulnerabilities").description("Detects vulnerable components")
-            .severity(RuleDefinition.RuleSeverity.MAJOR).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A9").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-1035").cweId("CWE-1104")
             .language("java").tag("owasp-2017").tag("dependencies").build());
     }

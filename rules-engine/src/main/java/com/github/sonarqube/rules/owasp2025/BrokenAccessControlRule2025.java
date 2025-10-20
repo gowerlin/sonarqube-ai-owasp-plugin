@@ -79,26 +79,29 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
     );
 
     public BrokenAccessControlRule2025() {
-        super(
-            RULE_ID,
-            RULE_NAME,
-            DESCRIPTION,
-            "A01",  // OWASP 2025 A01: Broken Access Control (保持第一)
-            "2025",  // OWASP 2025
-            List.of(
-                "CWE-22", "CWE-284", "CWE-639", "CWE-862", "CWE-863",  // 核心 CWE
-                "CWE-1270", "CWE-1390"  // OWASP 2025 新增
-            )
-        );
+        super(createRuleDefinition());
     }
 
-    @Override
-    public String getDefaultSeverity() {
-        return "CRITICAL";
+    private static RuleDefinition createRuleDefinition() {
+        return RuleDefinition.builder(RULE_ID)
+            .name(RULE_NAME)
+            .description(DESCRIPTION)
+            .severity(RuleDefinition.RuleSeverity.BLOCKER)
+            .type(RuleDefinition.RuleType.VULNERABILITY)
+            .owaspCategory("A01")  // OWASP 2025 A01: Broken Access Control
+            .cweId("CWE-22").cweId("CWE-284").cweId("CWE-639").cweId("CWE-862").cweId("CWE-863")  // 核心 CWE
+            .cweId("CWE-1270").cweId("CWE-1390")  // OWASP 2025 新增
+            .language("java")
+            .tag("owasp-2025").tag("security").tag("access-control")
+            .build();
     }
 
     @Override
     public boolean matches(RuleContext context) {
+        if (!super.matches(context)) {
+            return false;
+        }
+
         String code = context.getCode();
 
         // 快速過濾：必須包含 API、授權或檔案操作相關關鍵字
@@ -114,11 +117,7 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
     }
 
     @Override
-    public RuleResult execute(RuleContext context) {
-        RuleResult.Builder resultBuilder = RuleResult.builder()
-            .ruleId(getRuleId())
-            .success(true);
-
+    protected RuleResult doExecute(RuleContext context) {
         String code = context.getCode();
         List<RuleResult.RuleViolation> violations = new ArrayList<>();
 
@@ -132,11 +131,10 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
         violations.addAll(detectPathTraversal(code));
         violations.addAll(detectMissingAuthorization(code));
 
-        if (!violations.isEmpty()) {
-            violations.forEach(resultBuilder::addViolation);
-        }
-
-        return resultBuilder.build();
+        return RuleResult.builder(getRuleId())
+            .success(true)
+            .violations(violations)
+            .build();
     }
 
     /**
@@ -150,9 +148,8 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
             for (Integer lineNumber : lines) {
                 violations.add(createViolation(
                     lineNumber,
-                    "API Authorization Bypass: API 端點缺少授權檢查 (@PreAuthorize, @Secured)",
-                    "CRITICAL",
-                    getCodeSnippet(code, lineNumber),
+                    "API Authorization Bypass: API 端點缺少授權檢查 (@PreAuthorize, @Secured) (CWE-862)",
+                    code,
                     "建議修復：\n" +
                         "1. 為所有 API 端點新增 @PreAuthorize 或 @Secured 註解\n" +
                         "2. 實現基於角色的存取控制 (RBAC)\n" +
@@ -183,9 +180,8 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
             for (Integer lineNumber : lines) {
                 violations.add(createViolation(
                     lineNumber,
-                    "GraphQL Authorization Missing: GraphQL Resolver 缺少授權檢查",
-                    "HIGH",
-                    getCodeSnippet(code, lineNumber),
+                    "GraphQL Authorization Missing: GraphQL Resolver 缺少授權檢查 (CWE-862)",
+                    code,
                     "建議修復：\n" +
                         "1. 為 GraphQL Resolver 新增 @PreAuthorize 註解\n" +
                         "2. 實現 GraphQL Directive 進行授權檢查\n" +
@@ -216,9 +212,8 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
             for (Integer lineNumber : lines) {
                 violations.add(createViolation(
                     lineNumber,
-                    "Cloud IAM Misconfiguration: 雲端資源配置允許公開存取或過寬權限",
-                    "CRITICAL",
-                    getCodeSnippet(code, lineNumber),
+                    "Cloud IAM Misconfiguration: 雲端資源配置允許公開存取或過寬權限 (CWE-284)",
+                    code,
                     "建議修復：\n" +
                         "1. AWS S3: 移除 'public-read' ACL，使用 Bucket Policy 精確控制\n" +
                         "2. AWS IAM: 避免 'Action: *' 和 'Principal: *'，遵循最小權限原則\n" +
@@ -254,9 +249,8 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
             for (Integer lineNumber : lines) {
                 violations.add(createViolation(
                     lineNumber,
-                    "Microservice Authorization Missing: 微服務間調用缺少授權憑證",
-                    "HIGH",
-                    getCodeSnippet(code, lineNumber),
+                    "Microservice Authorization Missing: 微服務間調用缺少授權憑證 (CWE-862)",
+                    code,
                     "建議修復：\n" +
                         "1. 使用 OAuth 2.0 Client Credentials Flow 進行服務間認證\n" +
                         "2. 實現 JWT Token 傳遞與驗證\n" +
@@ -298,9 +292,8 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
             for (Integer lineNumber : lines) {
                 violations.add(createViolation(
                     lineNumber,
-                    "Path Traversal: 路徑遍歷攻擊風險（../ 或編碼變體）",
-                    "HIGH",
-                    getCodeSnippet(code, lineNumber),
+                    "Path Traversal: 路徑遍歷攻擊風險（../ 或編碼變體） (CWE-22)",
+                    code,
                     "建議修復：使用白名單驗證檔案路徑，禁止 ../ 等特殊字元"
                 ));
             }
@@ -320,9 +313,8 @@ public class BrokenAccessControlRule2025 extends AbstractOwaspRule {
             for (Integer lineNumber : lines) {
                 violations.add(createViolation(
                     lineNumber,
-                    "Missing Authorization: API 端點缺少授權檢查註解",
-                    "CRITICAL",
-                    getCodeSnippet(code, lineNumber),
+                    "Missing Authorization: API 端點缺少授權檢查註解 (CWE-862)",
+                    code,
                     "建議修復：新增 @PreAuthorize 或 @Secured 註解進行授權檢查"
                 ));
             }

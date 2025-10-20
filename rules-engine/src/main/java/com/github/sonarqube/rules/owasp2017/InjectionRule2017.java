@@ -16,9 +16,7 @@ public class InjectionRule2017 extends AbstractOwaspRule {
     private static final Pattern LDAP_INJECTION = Pattern.compile("(?:search|lookup)\\s*\\([^)]*(?:\\+|concat).*(?:request\\.|params\\.)", Pattern.CASE_INSENSITIVE);
 
     public InjectionRule2017() {
-        super(RuleDefinition.builder()
-            .ruleKey(RULE_ID).name("OWASP 2017 A1: Injection").description("Detects injection vulnerabilities")
-            .severity(RuleDefinition.RuleSeverity.CRITICAL).type(RuleDefinition.RuleType.VULNERABILITY).owaspCategory("A1").owaspVersion("2017")
+        super(RuleDefinition.builder(RULE_ID)
             .cweId("CWE-89").cweId("CWE-79").cweId("CWE-78").cweId("CWE-90")
             .language("java").tag("owasp-2017").tag("injection").build());
     }
