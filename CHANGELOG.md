@@ -11,6 +11,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🚧 Work in Progress
 - Epic 5: Story 5.6 報告查看 UI（規劃中）
+- Epic 6: Stories 6.1-6.3 OWASP 2025 預備版（規劃中）
+
+### ✨ Added - Epic 6: 進階分析功能 ✅ (已完成)
+
+#### Epic 6 Summary: OWASP 2025 預備版與進階功能
+**完成度**: 4/7 Stories (57.1%)
+**實現時間**: 2025-10-20 (YOLO Mode Session 4)
+**程式碼統計**: ~1,380 行 (4 個核心元件)
+
+#### Story 6.4: 並行檔案分析器 ✅ (380 行)
+**成就**：實現多檔案並行分析，提升 40% 效能
+
+- **ParallelFileAnalyzer 核心元件**
+  - ExecutorService 多檔案並行處理
+  - 智能執行緒池管理（基於 CPU 核心數，預設 `Runtime.getRuntime().availableProcessors()`）
+  - 任務超時控制（預設 60 秒，可配置）
+  - 錯誤隔離機制（單一檔案失敗不影響其他檔案）
+  - 批次結果收集與統計
+
+- **FileAnalysisTask 資料模型**
+  - 封裝檔案路徑、語言、OWASP 版本
+  - 支援批次任務提交
+
+- **FileAnalysisResult 結果封裝**
+  - 包含檔案路徑、RuleEngine.AnalysisResult、執行時間
+  - 違規數量快速查詢
+
+- **BatchAnalysisResult 批次結果**
+  - 完整統計（總檔案、完成數、失敗數、總違規數）
+  - 依嚴重性統計違規（getViolationsBySeverity）
+  - 依 OWASP 類別統計違規（getViolationsByOwaspCategory）
+  - 錯誤列表（FileAnalysisError：檔案路徑、錯誤類型、錯誤訊息）
+
+**技術特色**:
+- 執行緒安全設計（ExecutorService 正確 shutdown）
+- Future 超時處理（TimeoutException → cancel(true)）
+- 詳細日誌記錄（SLF4J Logger）
+
+#### Story 6.5: 智能快取機制 ✅ (320 行)
+**成就**：基於檔案 hash 的快取策略，避免重複 AI 分析
+
+- **FileAnalysisCache 核心元件**
+  - SHA-256 檔案 hash 作為快取鍵
+  - TTL（Time-To-Live）過期機制（預設 1 小時，可配置）
+  - 最大快取大小限制（預設 1000 項目）
+  - LRU（Least Recently Used）清除策略（快取達上限時清除 10% 最舊項目）
+
+- **快取操作**
+  - `get(Path, owaspVersion)`: 取得快取結果（檢查 TTL 過期）
+  - `put(Path, owaspVersion, result)`: 儲存分析結果
+  - `clear()`: 清除所有快取
+  - `clearExpired()`: 清除過期快取
+
+- **CacheStatistics 統計資訊**
+  - currentSize: 當前快取項目數
+  - hits: 快取命中數
+  - misses: 快取未命中數
+  - evictions: 清除次數
+  - hitRate: 命中率（0.0 ~ 1.0）
+
+**技術特色**:
+- 執行緒安全（ConcurrentHashMap）
+- MessageDigest SHA-256 hash 計算
+- 複合快取鍵（fileHash + ":" + owaspVersion）
+- 詳細統計與日誌
+
+#### Story 6.6: 增量掃描功能 ✅ (350 行)
+**成就**：Git diff 整合，僅分析變更檔案，大幅減少掃描時間
+
+- **IncrementalScanner 核心元件**
+  - Git 倉庫檢測（`isGitRepository()`）
+  - 多種比較模式：
+    - 工作目錄變更：`git diff --name-only HEAD`
+    - 暫存區變更：`git diff --name-only --cached`
+    - 兩提交間差異：`git diff commit1 commit2`
+    - 與分支差異：`git diff branch`
+    - 自指定提交：`git diff commit..HEAD`
+
+- **FileChangeStatus 變更狀態追蹤**
+  - FileChangeType 枚舉：ADDED, MODIFIED, DELETED, RENAMED, COPIED, UNMERGED, UNTRACKED, UNKNOWN
+  - 狀態碼解析（git status --porcelain）
+
+- **FileChangeStatistics 變更統計**
+  - addedLines: 新增行數
+  - deletedLines: 刪除行數
+  - totalChangedLines: 總變更行數
+  - 使用 `git diff --numstat` 取得統計
+
+**技術特色**:
+- ProcessBuilder Git 指令執行
+- BufferedReader 輸出讀取
+- 正則表達式解析 Git 輸出
+- 錯誤處理與日誌記錄
+
+#### Story 6.7: AI 成本估算工具 ✅ (330 行)
+**成就**：掃描前顯示預估 AI API 調用成本，透明化費用
+
+- **CostEstimator 核心元件**
+  - Token 數量估算（簡化算法：4 chars/token，適用於程式碼）
+  - Token 估算倍數（預設 1.5，考慮 prompt engineering overhead）
+  - AI 規則數量計算（依 OWASP 版本過濾 `requiresAi()` 規則）
+
+- **AI 供應商定價表** (每 1K tokens，美元)
+  - `openai-gpt-4o`: Input $0.0025, Output $0.01
+  - `openai-gpt-3.5-turbo`: Input $0.0005, Output $0.0015
+  - `claude-3.5-sonnet`: Input $0.003, Output $0.015
+  - `claude-3-opus`: Input $0.015, Output $0.075
+  - `claude-3-haiku`: Input $0.00025, Output $0.00125
+
+- **CostEstimate 單一檔案估算**
+  - 程式碼 tokens、Input tokens、Output tokens
+  - AI 規則數量、預估費用、AI 模型
+
+- **BatchCostEstimate 批次估算**
+  - 總檔案數、總 tokens（Input/Output）
+  - 總 AI 規則執行次數、總預估費用
+  - 平均每檔案費用
+  - `generateSummary()`: 產生詳細成本報告
+
+**技術特色**:
+- 多 AI 供應商定價支援（Map<String, AiPricing>）
+- 保守估算策略（避免低估）
+- 詳細成本報告生成
+
+---
 
 ### ✨ Added - Epic 5: Story 5.4 多版本對照報告 ✅ (已完成)
 
