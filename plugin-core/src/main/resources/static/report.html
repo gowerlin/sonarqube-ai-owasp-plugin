@@ -188,6 +188,21 @@
             pointer-events: none;
         }
 
+        .search-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+        }
+
+        .search-row .search-box {
+            flex: 1;
+        }
+
+        .search-row .filter-actions {
+            margin-top: 0;
+            align-items: flex-end;
+        }
+
         .filter-actions {
             display: flex;
             gap: 10px;
@@ -550,15 +565,15 @@
                     </select>
                 </div>
             </div>
-            <div class="filter-row">
+            <div class="filter-row search-row">
                 <div class="filter-group search-box">
                     <label for="searchBox">搜尋</label>
                     <input type="text" id="searchBox" placeholder="依標題、CWE ID、描述搜尋...">
                 </div>
-            </div>
-            <div class="filter-actions">
-                <button class="btn btn-primary" id="applyFiltersBtn">套用篩選</button>
-                <button class="btn btn-secondary" id="resetFiltersBtn">重設</button>
+                <div class="filter-actions">
+                    <button class="btn btn-primary" id="applyFiltersBtn">套用篩選</button>
+                    <button class="btn btn-secondary" id="resetFiltersBtn">重設</button>
+                </div>
             </div>
         </div>
 
