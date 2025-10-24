@@ -181,7 +181,11 @@ public class PdfReportGenerator implements ReportGenerator {
      * @throws IOException 如果檔案操作失敗
      */
     private String generateInternal(AnalysisReport report) throws IOException {
-        String outputPath = "target/test-report.pdf";
+        // 使用系統臨時目錄儲存 PDF 檔案，避免硬編碼路徑問題
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("owasp-report-", ".pdf");
+        String outputPath = tempFile.toAbsolutePath().toString();
+        LOG.info("Creating PDF report at temporary location: {}", outputPath);
+
         PdfReportConfig config = PdfReportConfig.builder().build(); // 預設配置
 
         // Story 1.7: 檢查是否為空報告

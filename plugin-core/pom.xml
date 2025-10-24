@@ -61,6 +61,20 @@
             <artifactId>sonar-plugin-api</artifactId>
         </dependency>
 
+        <!-- SonarQube Web Services Client (bundled with plugin) -->
+        <dependency>
+            <groupId>org.sonarsource.sonarqube</groupId>
+            <artifactId>sonar-ws</artifactId>
+            <version>9.9.0.65466</version>
+        </dependency>
+
+        <!-- JSON 處理 -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
         <!-- 日誌框架 -->
         <dependency>
             <groupId>org.slf4j</groupId>

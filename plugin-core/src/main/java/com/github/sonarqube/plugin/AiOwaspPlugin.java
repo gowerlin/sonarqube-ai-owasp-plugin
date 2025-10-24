@@ -6,6 +6,7 @@ import com.github.sonarqube.plugin.api.OwaspVersionApiController;
 import com.github.sonarqube.plugin.api.PdfReportApiController;
 import com.github.sonarqube.plugin.api.ScanProgressApiController;
 import com.github.sonarqube.plugin.web.OwaspReportPageDefinition;
+import com.github.sonarqube.rules.RuleRegistry;
 import org.sonar.api.Plugin;
 import org.sonar.api.PropertyType;
 import org.sonar.api.config.PropertyDefinition;
@@ -310,6 +311,13 @@ public class AiOwaspPlugin implements Plugin {
      * 註冊 Web Services (API 端點)
      */
     private void defineWebServices(Context context) {
+        // 創建共享的 RuleRegistry 實例
+        RuleRegistry ruleRegistry = new RuleRegistry();
+        context.addExtension(ruleRegistry);
+
+        // 註冊 SonarQube 數據查詢服務
+        context.addExtension(com.github.sonarqube.plugin.service.SonarQubeDataService.class);
+
         // 配置管理 API (Epic 7.1)
         // TODO: 暫時停用，需要實作 AiConfiguration, ConfigurationManager, ScanScopeConfiguration 類別後才能啟用
         // context.addExtension(ConfigurationApiController.class);
@@ -317,16 +325,17 @@ public class AiOwaspPlugin implements Plugin {
         // 掃描進度追蹤 API (Epic 7.5)
         context.addExtension(ScanProgressApiController.class);
 
-        // 版本管理 API
-        context.addExtension(OwaspVersionApiController.class);
+        // 版本管理 API - 手動實例化並注入依賴
+        context.addExtension(new OwaspVersionApiController(ruleRegistry));
 
         // PDF 報告匯出 API (包含 HTML/JSON/Markdown)
+        // SonarQube 會自動注入 Configuration 和 SonarQubeDataService
         context.addExtension(PdfReportApiController.class);
 
         // CLI 狀態檢查 API (Epic 9)
         context.addExtension(CliStatusApiController.class);
 
-        LOG.debug("已註冊 {} 個 Web Service", 4);  // 暫時停用 ConfigurationApiController
+        LOG.debug("已註冊 {} 個 Web Service (含 SonarQubeDataService)", 5);  // 暫時停用 ConfigurationApiController
     }
 
     /**

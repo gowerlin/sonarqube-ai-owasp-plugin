@@ -1,11 +1,14 @@
 package com.github.sonarqube.plugin.api;
 
+import com.github.sonarqube.plugin.service.SonarQubeDataService;
 import com.github.sonarqube.plugin.settings.PdfReportSettings;
 import com.github.sonarqube.report.ReportGenerator;
 import com.github.sonarqube.report.html.HtmlReportGenerator;
 import com.github.sonarqube.report.json.JsonReportGenerator;
 import com.github.sonarqube.report.markdown.MarkdownReportGenerator;
 import com.github.sonarqube.report.model.AnalysisReport;
+import com.github.sonarqube.report.model.ReportSummary;
+import com.github.sonarqube.report.model.SecurityFinding;
 import com.github.sonarqube.report.pdf.PdfReportGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +18,7 @@ import org.sonar.api.server.ws.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 
 /**
  * OWASP Report Export API Controller
@@ -38,12 +42,14 @@ public class PdfReportApiController implements WebService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PdfReportApiController.class);
 
-    private static final String API_ENDPOINT = "api/owasp";
+    private static final String API_ENDPOINT = "api/owasp/report";
     private static final String ACTION_EXPORT = "export";
     private static final String PARAM_FORMAT = "format";
     private static final String PARAM_PROJECT = "project";
+    private static final String PARAM_VERSION = "version";
 
     private final Configuration configuration;
+    private final SonarQubeDataService dataService;
     private final PdfReportGenerator pdfReportGenerator;
     private final HtmlReportGenerator htmlReportGenerator;
     private final JsonReportGenerator jsonReportGenerator;
@@ -53,9 +59,11 @@ public class PdfReportApiController implements WebService {
      * Constructor
      *
      * @param configuration SonarQube configuration
+     * @param dataService SonarQube 數據查詢服務
      */
-    public PdfReportApiController(Configuration configuration) {
+    public PdfReportApiController(Configuration configuration, SonarQubeDataService dataService) {
         this.configuration = configuration;
+        this.dataService = dataService;
         this.pdfReportGenerator = new PdfReportGenerator();
         this.htmlReportGenerator = new HtmlReportGenerator();
         this.jsonReportGenerator = new JsonReportGenerator();
@@ -87,6 +95,13 @@ public class PdfReportApiController implements WebService {
                 .setRequired(true)
                 .setExampleValue("com.example:my-project");
 
+        exportAction.createParam(PARAM_VERSION)
+                .setDescription("OWASP Top 10 version (2017, 2021, or 2025)")
+                .setRequired(false)
+                .setDefaultValue("2021")
+                .setPossibleValues("2017", "2021", "2025")
+                .setExampleValue("2021");
+
         controller.done();
 
         LOG.info("PDF Report API Controller registered successfully");
@@ -101,22 +116,25 @@ public class PdfReportApiController implements WebService {
     private void handleExportRequest(Request request, Response response) {
         String format = request.mandatoryParam(PARAM_FORMAT);
         String projectKey = request.mandatoryParam(PARAM_PROJECT);
+        String owaspVersion = request.param(PARAM_VERSION) != null ?
+                              request.param(PARAM_VERSION) : "2021";
 
-        LOG.info("Export request received: format={}, project={}", format, projectKey);
+        LOG.info("Export request received: format={}, project={}, owaspVersion={}",
+                 format, projectKey, owaspVersion);
 
         try {
             switch (format.toLowerCase()) {
                 case "pdf":
-                    exportPdfReport(request, response, projectKey);
+                    exportPdfReport(request, response, projectKey, owaspVersion);
                     break;
                 case "html":
-                    exportHtmlReport(request, response, projectKey);
+                    exportHtmlReport(request, response, projectKey, owaspVersion);
                     break;
                 case "json":
-                    exportJsonReport(request, response, projectKey);
+                    exportJsonReport(request, response, projectKey, owaspVersion);
                     break;
                 case "markdown":
-                    exportMarkdownReport(request, response, projectKey);
+                    exportMarkdownReport(request, response, projectKey, owaspVersion);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported format: " + format);
@@ -142,12 +160,11 @@ public class PdfReportApiController implements WebService {
      * @param projectKey Project key
      * @throws IOException If file operations fail
      */
-    private void exportPdfReport(Request request, Response response, String projectKey) throws IOException {
-        LOG.info("Generating PDF report for project: {}", projectKey);
+    private void exportPdfReport(Request request, Response response, String projectKey, String owaspVersion) throws IOException {
+        LOG.info("Generating PDF report for project: {} (OWASP {})", projectKey, owaspVersion);
 
-        // TODO: Retrieve actual analysis data from SonarQube database
-        // For now, use a placeholder report
-        AnalysisReport report = createPlaceholderReport(projectKey);
+        // 從 SonarQube 查詢實際的安全問題數據
+        AnalysisReport report = createReportFromSonarQubeData(projectKey, owaspVersion);
 
         // Apply configuration settings
         applyConfigurationToGenerator();
@@ -166,7 +183,6 @@ public class PdfReportApiController implements WebService {
         String filename = String.format("owasp-security-report-%s.pdf", projectKey.replace(":", "-"));
         response.stream().setMediaType("application/pdf");
         response.stream().setStatus(200);
-        response.stream().output().write(("Content-Disposition: attachment; filename=\"" + filename + "\"").getBytes());
 
         // Write PDF file to response
         byte[] pdfBytes = Files.readAllBytes(pdfFile.toPath());
@@ -190,11 +206,11 @@ public class PdfReportApiController implements WebService {
      * @param projectKey Project key
      * @throws IOException If file operations fail
      */
-    private void exportHtmlReport(Request request, Response response, String projectKey) throws IOException {
-        LOG.info("Generating HTML report for project: {}", projectKey);
+    private void exportHtmlReport(Request request, Response response, String projectKey, String owaspVersion) throws IOException {
+        LOG.info("Generating HTML report for project: {} (OWASP {})", projectKey, owaspVersion);
 
-        // TODO: Retrieve actual analysis data from SonarQube database
-        AnalysisReport report = createPlaceholderReport(projectKey);
+        // 從 SonarQube 查詢實際的安全問題數據
+        AnalysisReport report = createReportFromSonarQubeData(projectKey, owaspVersion);
 
         // Generate HTML
         String htmlContent = htmlReportGenerator.generate(report);
@@ -203,7 +219,6 @@ public class PdfReportApiController implements WebService {
         String filename = String.format("owasp-security-report-%s.html", projectKey.replace(":", "-"));
         response.stream().setMediaType("text/html");
         response.stream().setStatus(200);
-        response.stream().output().write(("Content-Disposition: attachment; filename=\"" + filename + "\"").getBytes());
 
         // Write HTML content to response
         response.stream().output().write(htmlContent.getBytes("UTF-8"));
@@ -219,11 +234,11 @@ public class PdfReportApiController implements WebService {
      * @param projectKey Project key
      * @throws IOException If file operations fail
      */
-    private void exportJsonReport(Request request, Response response, String projectKey) throws IOException {
-        LOG.info("Generating JSON report for project: {}", projectKey);
+    private void exportJsonReport(Request request, Response response, String projectKey, String owaspVersion) throws IOException {
+        LOG.info("Generating JSON report for project: {} (OWASP {})", projectKey, owaspVersion);
 
-        // TODO: Retrieve actual analysis data from SonarQube database
-        AnalysisReport report = createPlaceholderReport(projectKey);
+        // 從 SonarQube 查詢實際的安全問題數據
+        AnalysisReport report = createReportFromSonarQubeData(projectKey, owaspVersion);
 
         // Generate JSON
         String jsonContent = jsonReportGenerator.generate(report);
@@ -232,7 +247,6 @@ public class PdfReportApiController implements WebService {
         String filename = String.format("owasp-security-report-%s.json", projectKey.replace(":", "-"));
         response.stream().setMediaType("application/json");
         response.stream().setStatus(200);
-        response.stream().output().write(("Content-Disposition: attachment; filename=\"" + filename + "\"").getBytes());
 
         // Write JSON content to response
         response.stream().output().write(jsonContent.getBytes("UTF-8"));
@@ -248,11 +262,11 @@ public class PdfReportApiController implements WebService {
      * @param projectKey Project key
      * @throws IOException If file operations fail
      */
-    private void exportMarkdownReport(Request request, Response response, String projectKey) throws IOException {
-        LOG.info("Generating Markdown report for project: {}", projectKey);
+    private void exportMarkdownReport(Request request, Response response, String projectKey, String owaspVersion) throws IOException {
+        LOG.info("Generating Markdown report for project: {} (OWASP {})", projectKey, owaspVersion);
 
-        // TODO: Retrieve actual analysis data from SonarQube database
-        AnalysisReport report = createPlaceholderReport(projectKey);
+        // 從 SonarQube 查詢實際的安全問題數據
+        AnalysisReport report = createReportFromSonarQubeData(projectKey, owaspVersion);
 
         // Generate Markdown
         String markdownContent = markdownReportGenerator.generate(report);
@@ -261,7 +275,6 @@ public class PdfReportApiController implements WebService {
         String filename = String.format("owasp-security-report-%s.md", projectKey.replace(":", "-"));
         response.stream().setMediaType("text/markdown");
         response.stream().setStatus(200);
-        response.stream().output().write(("Content-Disposition: attachment; filename=\"" + filename + "\"").getBytes());
 
         // Write Markdown content to response
         response.stream().output().write(markdownContent.getBytes("UTF-8"));
@@ -290,23 +303,33 @@ public class PdfReportApiController implements WebService {
     }
 
     /**
-     * Create placeholder report for testing
-     * TODO: Replace with actual data retrieval from SonarQube database
+     * 從 SonarQube 查詢實際的分析數據並創建報告
      *
-     * @param projectKey Project key
-     * @return Placeholder analysis report
+     * @param projectKey 專案 key
+     * @return 分析報告（包含實際的安全發現）
      */
-    private AnalysisReport createPlaceholderReport(String projectKey) {
-        LOG.warn("Using placeholder report data - actual database integration not yet implemented");
+    private AnalysisReport createReportFromSonarQubeData(String projectKey, String owaspVersion) {
+        LOG.info("Retrieving actual analysis data from SonarQube for project: {} (OWASP {})",
+             projectKey, owaspVersion);
+
+        // 查詢安全問題
+        List<SecurityFinding> findings = dataService.getOwaspFindings(projectKey, owaspVersion);
+
+        // 計算摘要統計
+        ReportSummary summary = dataService.calculateSummary(findings);
+
+        LOG.info("Report created: {} total findings, {} BLOCKER, {} CRITICAL, {} MAJOR",
+                summary.getTotalFindings(),
+                summary.getBlockerCount(),
+                summary.getCriticalCount(),
+                summary.getMajorCount());
 
         return AnalysisReport.builder()
                 .projectName(projectKey)
-                .owaspVersion("2021")
+                .owaspVersion(owaspVersion)
                 .analysisTime(java.time.LocalDateTime.now())
-                .findings(java.util.Collections.emptyList())
-                .summary(com.github.sonarqube.report.model.ReportSummary.builder()
-                        .totalFindings(0)
-                        .build())
+                .findings(findings)
+                .summary(summary)
                 .build();
     }
 }

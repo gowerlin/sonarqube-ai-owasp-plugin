@@ -25,10 +25,15 @@ public class OwaspReportPageDefinition implements PageDefinition {
     @Override
     public void define(Context context) {
         // 定義 OWASP 報告查看頁面
+        // Page key 必須包含一個斜線 (pluginKey/pageId)
+        // JavaScript 文件名稱應該與 pageId 部分匹配 (report.js)
+        // 文件位置: src/main/resources/static/report.js
+        // 運行時 URL: /static/aiowasp/report.js
         context
-            .addPage(Page.builder("owasp-security/report")
+            .addPage(Page.builder("aiowasp/report")
                 .setName("OWASP Security Report")
                 .setScope(Page.Scope.COMPONENT)
+                .setAdmin(false)
                 .build());
     }
 }
