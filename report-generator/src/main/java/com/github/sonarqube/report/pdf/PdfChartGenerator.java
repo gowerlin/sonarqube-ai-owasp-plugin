@@ -71,9 +71,10 @@ public class PdfChartGenerator {
     /**
      * 圖表快取 (Caffeine Cache)
      *
-     * <p>快取已生成的圖表圖片，避免相同資料重複生成，提升效能。</p>
+     * <p>快取已生成的圖表圖片 PNG 位元組資料，避免相同資料重複生成，提升效能。</p>
+     * <p><strong>注意</strong>：快取 byte[] 而不是 Image 物件，因為 Image 物件綁定到特定的 PDF 文檔。</p>
      */
-    private final Cache<String, Image> chartCache;
+    private final Cache<String, byte[]> chartCache;
 
     /**
      * 建構子
@@ -115,10 +116,11 @@ public class PdfChartGenerator {
     public Image generateSeverityPieChart(ReportSummary summary) throws IOException {
         String cacheKey = "severity-pie-" + generateSummaryCacheKey(summary);
 
-        Image cachedImage = chartCache.getIfPresent(cacheKey);
-        if (cachedImage != null) {
-            LOG.debug("Using cached severity pie chart (key: {})", cacheKey);
-            return cachedImage;
+        byte[] cachedPngBytes = chartCache.getIfPresent(cacheKey);
+        if (cachedPngBytes != null) {
+            LOG.debug("Using cached severity pie chart PNG data (key: {})", cacheKey);
+            com.itextpdf.io.image.ImageData imageData = ImageDataFactory.create(cachedPngBytes);
+            return new Image(imageData).setWidth(400).setHeight(300);
         }
 
         LOG.info("Generating severity pie chart for summary: {}", cacheKey);
@@ -127,15 +129,13 @@ public class PdfChartGenerator {
         PieChart chart = createSeverityPieChart(summary);
         byte[] pngBytes = BitmapEncoder.getBitmapBytes(chart, BitmapEncoder.BitmapFormat.PNG);
 
-        com.itextpdf.io.image.ImageData imageData = ImageDataFactory.create(pngBytes);
-        Image image = new Image(imageData).setWidth(400).setHeight(300);
-
-        chartCache.put(cacheKey, image);
+        chartCache.put(cacheKey, pngBytes);
 
         long duration = System.currentTimeMillis() - startTime;
-        LOG.info("Severity pie chart generated in {}ms (cached for future use)", duration);
+        LOG.info("Severity pie chart generated in {}ms (PNG data cached for future use)", duration);
 
-        return image;
+        com.itextpdf.io.image.ImageData imageData = ImageDataFactory.create(pngBytes);
+        return new Image(imageData).setWidth(400).setHeight(300);
     }
 
     /**
@@ -215,10 +215,11 @@ public class PdfChartGenerator {
             throws IOException {
         String cacheKey = "owasp-bar-" + categoryDistribution.hashCode();
 
-        Image cachedImage = chartCache.getIfPresent(cacheKey);
-        if (cachedImage != null) {
-            LOG.debug("Using cached OWASP bar chart (key: {})", cacheKey);
-            return cachedImage;
+        byte[] cachedPngBytes = chartCache.getIfPresent(cacheKey);
+        if (cachedPngBytes != null) {
+            LOG.debug("Using cached OWASP bar chart PNG data (key: {})", cacheKey);
+            com.itextpdf.io.image.ImageData imageData = ImageDataFactory.create(cachedPngBytes);
+            return new Image(imageData).setWidth(600).setHeight(400);
         }
 
         LOG.info("Generating OWASP category bar chart ({} categories)", categoryDistribution.size());
@@ -227,15 +228,13 @@ public class PdfChartGenerator {
         CategoryChart chart = createOwaspBarChart(categoryDistribution);
         byte[] pngBytes = BitmapEncoder.getBitmapBytes(chart, BitmapEncoder.BitmapFormat.PNG);
 
-        com.itextpdf.io.image.ImageData imageData = ImageDataFactory.create(pngBytes);
-        Image image = new Image(imageData).setWidth(600).setHeight(400);
-
-        chartCache.put(cacheKey, image);
+        chartCache.put(cacheKey, pngBytes);
 
         long duration = System.currentTimeMillis() - startTime;
-        LOG.info("OWASP bar chart generated in {}ms (cached for future use)", duration);
+        LOG.info("OWASP bar chart generated in {}ms (PNG data cached for future use)", duration);
 
-        return image;
+        com.itextpdf.io.image.ImageData imageData = ImageDataFactory.create(pngBytes);
+        return new Image(imageData).setWidth(600).setHeight(400);
     }
 
     /**
