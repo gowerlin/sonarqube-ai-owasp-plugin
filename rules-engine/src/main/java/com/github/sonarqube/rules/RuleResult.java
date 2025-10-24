@@ -179,6 +179,8 @@ public class RuleResult {
         private final RuleDefinition.RuleSeverity severity;
         private final String codeSnippet;
         private final String fixSuggestion;
+        private final CodeExample codeExample;
+        private final String effortEstimate;
 
         private RuleViolation(ViolationBuilder builder) {
             this.lineNumber = builder.lineNumber;
@@ -186,6 +188,8 @@ public class RuleResult {
             this.severity = builder.severity;
             this.codeSnippet = builder.codeSnippet;
             this.fixSuggestion = builder.fixSuggestion;
+            this.codeExample = builder.codeExample;
+            this.effortEstimate = builder.effortEstimate;
         }
 
         public int getLineNumber() {
@@ -208,6 +212,14 @@ public class RuleResult {
             return fixSuggestion;
         }
 
+        public CodeExample getCodeExample() {
+            return codeExample;
+        }
+
+        public String getEffortEstimate() {
+            return effortEstimate;
+        }
+
         public static ViolationBuilder builder() {
             return new ViolationBuilder();
         }
@@ -218,6 +230,8 @@ public class RuleResult {
             private RuleDefinition.RuleSeverity severity = RuleDefinition.RuleSeverity.MAJOR;
             private String codeSnippet;
             private String fixSuggestion;
+            private CodeExample codeExample;
+            private String effortEstimate;
 
             public ViolationBuilder lineNumber(int lineNumber) {
                 this.lineNumber = lineNumber;
@@ -241,6 +255,16 @@ public class RuleResult {
 
             public ViolationBuilder fixSuggestion(String fixSuggestion) {
                 this.fixSuggestion = fixSuggestion;
+                return this;
+            }
+
+            public ViolationBuilder codeExample(CodeExample codeExample) {
+                this.codeExample = codeExample;
+                return this;
+            }
+
+            public ViolationBuilder effortEstimate(String effortEstimate) {
+                this.effortEstimate = effortEstimate;
                 return this;
             }
 
