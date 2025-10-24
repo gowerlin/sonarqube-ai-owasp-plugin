@@ -196,9 +196,10 @@ public class PdfReportGenerator implements ReportGenerator {
         }
 
         // Story 1.7: 使用 try-with-resources 確保資源正確釋放（串流寫入優化）
+        // Note: 使用標準 PDF 而非 PDF/A，因為缺少必要的 ICC color profile 資源檔案
         try (PdfWriter writer = new PdfWriter(outputPath);
-             PdfADocument pdfADoc = createPdfADocument(writer);
-             Document document = new Document(pdfADoc)) {
+             PdfDocument pdfDoc = new PdfDocument(writer);
+             Document document = new Document(pdfDoc)) {
 
             // Note: Compression is enabled by default in iText 7.2.5
 
@@ -213,7 +214,7 @@ public class PdfReportGenerator implements ReportGenerator {
             String generationTime = LocalDateTime.now()
                     .format(DateTimeFormatter.ISO_DATE_TIME);
             layoutManager.addHeaderFooter(
-                    pdfADoc,
+                    pdfDoc,
                     config,
                     report.getProjectName(),
                     report.getOwaspVersion(),
