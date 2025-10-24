@@ -9,6 +9,7 @@ import com.github.sonarqube.ai.model.AiRequest;
 import com.github.sonarqube.ai.model.AiResponse;
 import com.github.sonarqube.ai.model.SecurityIssue;
 import com.github.sonarqube.config.PluginConfiguration;
+import com.github.sonarqube.plugin.util.SonarQubeVersionDetector;
 import com.github.sonarqube.rules.RuleDefinition;
 import com.github.sonarqube.rules.java.JavaSecurityRules;
 import com.github.sonarqube.rules.javascript.JavaScriptSecurityRules;
@@ -182,6 +183,10 @@ public class OwaspSensor implements Sensor {
 
     /**
      * 報告安全問題到 SonarQube
+     *
+     * Story 10.2: 修改為保留完整 AI 增強資訊
+     *
+     * 註：由於 SonarQube API 限制，AI 資訊透過增強訊息格式傳遞
      */
     private int reportIssues(SensorContext context, InputFile file, List<SecurityIssue> issues, String repositoryKey) {
         int count = 0;
@@ -200,10 +205,13 @@ public class OwaspSensor implements Sensor {
                 NewIssue newIssue = context.newIssue();
                 newIssue.forRule(RuleKey.of(repositoryKey, rule.getRuleKey()));
 
+                // 使用增強訊息格式（包含完整 AI 資訊）
+                String message = buildEnhancedMessage(issue, rule);
+
                 // 設定問題位置
                 NewIssueLocation location = newIssue.newLocation()
                         .on(file)
-                        .message(buildIssueMessage(issue, rule));
+                        .message(message);
 
                 // 如果有行號，設定行號
                 if (issue.getLineNumber() != null && issue.getLineNumber() > 0) {
@@ -220,6 +228,24 @@ public class OwaspSensor implements Sensor {
         }
 
         return count;
+    }
+
+    /**
+     * 建立增強訊息（包含完整 AI 資訊）
+     *
+     * Story 10.2: 確保所有 AI 提供的資訊都能顯示給使用者
+     *
+     * @param issue SecurityIssue
+     * @param rule RuleDefinition
+     * @return 包含完整資訊的訊息
+     */
+    private String buildEnhancedMessage(SecurityIssue issue, RuleDefinition rule) {
+        // 檢查是否有 AI 增強資訊
+        boolean hasAiEnhancement = (issue.getCodeExample() != null) ||
+                                   (issue.getEffortEstimate() != null && !issue.getEffortEstimate().isEmpty());
+
+        // 如果有 AI 資訊，使用完整格式；否則使用簡潔格式
+        return hasAiEnhancement ? buildLegacyIssueMessage(issue, rule) : buildIssueMessage(issue, rule);
     }
 
     /**
@@ -281,7 +307,7 @@ public class OwaspSensor implements Sensor {
     }
 
     /**
-     * 建立問題訊息
+     * 建立問題訊息（舊版本，保留用於降級模式）
      */
     private String buildIssueMessage(SecurityIssue issue, RuleDefinition rule) {
         StringBuilder message = new StringBuilder();
@@ -297,6 +323,65 @@ public class OwaspSensor implements Sensor {
         }
 
         return message.toString();
+    }
+
+    /**
+     * 建立降級模式的問題訊息（適用於不支援 Attributes 的舊版 SonarQube）
+     *
+     * @param issue SecurityIssue
+     * @param rule RuleDefinition
+     * @return 包含完整資訊的純文字訊息
+     */
+    private String buildLegacyIssueMessage(SecurityIssue issue, RuleDefinition rule) {
+        StringBuilder message = new StringBuilder();
+
+        // 基本訊息
+        message.append(rule.getName());
+
+        if (issue.getDescription() != null && !issue.getDescription().isEmpty()) {
+            message.append(": ").append(issue.getDescription());
+        }
+
+        // 修復建議
+        if (issue.getFixSuggestion() != null && !issue.getFixSuggestion().isEmpty()) {
+            message.append("\n\n建議: ").append(issue.getFixSuggestion());
+        }
+
+        // 程式碼範例（如果有）
+        if (issue.getCodeExample() != null) {
+            if (issue.getCodeExample().getBefore() != null && !issue.getCodeExample().getBefore().isEmpty()) {
+                message.append("\n\n程式碼範例（修復前）:\n").append(truncate(issue.getCodeExample().getBefore(), 1000));
+            }
+            if (issue.getCodeExample().getAfter() != null && !issue.getCodeExample().getAfter().isEmpty()) {
+                message.append("\n\n程式碼範例（修復後）:\n").append(truncate(issue.getCodeExample().getAfter(), 1000));
+            }
+        }
+
+        // 工作量評估
+        if (issue.getEffortEstimate() != null && !issue.getEffortEstimate().isEmpty()) {
+            message.append("\n\n工作量評估: ").append(issue.getEffortEstimate());
+        }
+
+        return message.toString();
+    }
+
+    /**
+     * 截斷字串至指定長度
+     *
+     * @param text 原始文字
+     * @param maxLength 最大長度
+     * @return 截斷後的文字，如果超過長度則加上 "..."
+     */
+    private String truncate(String text, int maxLength) {
+        if (text == null) {
+            return null;
+        }
+        if (text.length() <= maxLength) {
+            return text;
+        }
+
+        LOG.warn("文字長度 {} 超過限制 {}，將被截斷", text.length(), maxLength);
+        return text.substring(0, maxLength - 3) + "...";
     }
 
     /**
