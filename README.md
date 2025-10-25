@@ -3,7 +3,7 @@
 [![CI Build & Test](https://github.com/your-org/sonarqube-ai-owasp-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/sonarqube-ai-owasp-plugin/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![SonarQube Version](https://img.shields.io/badge/SonarQube-9.9%2B-blue)](https://www.sonarqube.org/)
-[![Java Version](https://img.shields.io/badge/Java-11%2B-orange)](https://adoptium.net/)
+[![Java Version](https://img.shields.io/badge/Java-17%2B-orange)](https://adoptium.net/)
 
 **AI 驅動的 OWASP 安全分析插件**，支援多版本 OWASP Top 10（2017、2021、2025），提供智能修復建議與並行分析。
 
@@ -120,7 +120,7 @@
 | 項目 | 最低需求 | 建議配置 |
 |------|----------|----------|
 | **SonarQube** | 9.9 LTS | 9.9 LTS 或更新 |
-| **Java** | 11+ | 17+ |
+| **Java** | 17+ | 17+ |
 | **Maven** | 3.8+ | 3.9+ |
 | **記憶體** | 4 GB | 8 GB+ |
 | **CPU** | 2 核心 | 4 核心+ |
@@ -334,7 +334,7 @@ make logs
 
 #### 手動設置
 ```bash
-# 1. 確保 Java 11+ 和 Maven 3.8+ 已安裝
+# 1. 確保 Java 17+ 和 Maven 3.8+ 已安裝
 java -version
 mvn -version
 
@@ -531,4 +531,4 @@ PdfReportConfig config = PdfReportConfig.builder()
 ---
 
 **Version**: 1.0.0-SNAPSHOT
-**Last Updated**: 2025-10-20
+**Last Updated**: 2025-10-25
