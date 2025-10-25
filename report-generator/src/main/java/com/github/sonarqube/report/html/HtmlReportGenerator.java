@@ -73,6 +73,11 @@ public class HtmlReportGenerator implements ReportGenerator {
         // 內嵌 CSS 樣式
         appendStyles(html);
 
+        // Highlight.js for syntax highlighting
+        html.append("  <!-- Highlight.js for syntax highlighting -->\n");
+        html.append("  <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css\">\n");
+        html.append("  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js\"></script>\n");
+
         html.append("</head>\n");
     }
 
@@ -122,10 +127,19 @@ public class HtmlReportGenerator implements ReportGenerator {
         html.append("    .finding-meta { display: flex; gap: 20px; flex-wrap: wrap; margin: 10px 0; ");
         html.append("font-size: 0.9rem; color: #7f8c8d; }\n");
         html.append("    .finding-meta strong { color: #2c3e50; }\n");
-        html.append("    .code-snippet { background: #f8f9fa; border-left: 4px solid #3498db; ");
+        html.append("    .code-snippet { background: #1e1e1e; color: #d4d4d4; border-left: 4px solid #3498db; ");
         html.append("padding: 15px; margin: 15px 0; border-radius: 4px; overflow-x: auto; }\n");
-        html.append("    .code-snippet pre { font-family: 'Courier New', Courier, monospace; ");
+        html.append("    .code-snippet pre { font-family: 'Courier New', Courier, monospace; color: #d4d4d4; ");
         html.append("font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }\n");
+        html.append("    .code-snippet code { color: #d4d4d4; }\n");
+        // VS Code Dark Theme Syntax Highlighting
+        html.append("    .hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: #569cd6; }\n"); // Keywords blue
+        html.append("    .hljs-string, .hljs-attr { color: #ce9178; }\n"); // Strings orange
+        html.append("    .hljs-number, .hljs-literal { color: #b5cea8; }\n"); // Numbers light green
+        html.append("    .hljs-comment { color: #6a9955; }\n"); // Comments dark green
+        html.append("    .hljs-function, .hljs-title { color: #dcdcaa; }\n"); // Functions light yellow
+        html.append("    .hljs-variable, .hljs-type, .hljs-class, .hljs-params { color: #4ec9b0; }\n"); // Variables/types cyan
+        html.append("    .hljs-operator, .hljs-punctuation { color: #d4d4d4; }\n"); // Operators white
         html.append("    .fix-suggestion { background: #fffbcc; border-left: 4px solid #f39c12; ");
         html.append("padding: 15px; margin: 15px 0; border-radius: 4px; }\n");
         html.append("    .fix-suggestion strong { color: #e67e22; }\n");
@@ -390,7 +404,11 @@ public class HtmlReportGenerator implements ReportGenerator {
         if (finding.getCodeSnippet() != null) {
             html.append("      <div class=\"code-snippet\">\n");
             html.append("        <strong>代碼片段:</strong>\n");
-            html.append("        <pre>").append(escapeHtml(finding.getCodeSnippet())).append("</pre>\n");
+            html.append("        <pre><code class=\"language-")
+                .append(detectLanguageFromPath(finding.getFilePath()))
+                .append("\">")
+                .append(escapeHtml(finding.getCodeSnippet()))
+                .append("</code></pre>\n");
             html.append("      </div>\n");
         }
 
@@ -419,6 +437,15 @@ public class HtmlReportGenerator implements ReportGenerator {
 
     private void appendBodyEnd(StringBuilder html) {
         html.append("  </div>\n");
+
+        // Highlight.js 初始化
+        html.append("  <script>\n");
+        html.append("    // Apply syntax highlighting to all code blocks\n");
+        html.append("    document.querySelectorAll('pre code').forEach(block => {\n");
+        html.append("      hljs.highlightElement(block);\n");
+        html.append("    });\n");
+        html.append("  </script>\n");
+
         html.append("</body>\n");
     }
 
@@ -434,6 +461,56 @@ public class HtmlReportGenerator implements ReportGenerator {
             case "MINOR": return "🟡";
             case "INFO": return "ℹ️";
             default: return "⚪";
+        }
+    }
+
+    /**
+     * 根據檔案路徑偵測程式語言（用於 Highlight.js 語法高亮）
+     *
+     * @param filePath 檔案路徑
+     * @return Highlight.js 語言識別碼
+     */
+    private String detectLanguageFromPath(String filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            return "plaintext";
+        }
+
+        // 取得副檔名
+        String ext = filePath.toLowerCase();
+        int lastDot = ext.lastIndexOf('.');
+        if (lastDot == -1) {
+            return "plaintext";
+        }
+        ext = ext.substring(lastDot + 1);
+
+        // 語言映射表
+        switch (ext) {
+            case "cs": return "csharp";
+            case "java": return "java";
+            case "js": return "javascript";
+            case "ts": return "typescript";
+            case "jsx": return "jsx";
+            case "tsx": return "tsx";
+            case "py": return "python";
+            case "rb": return "ruby";
+            case "go": return "go";
+            case "rs": return "rust";
+            case "cpp": return "cpp";
+            case "c": return "c";
+            case "h": return "c";
+            case "hpp": return "cpp";
+            case "php": return "php";
+            case "sql": return "sql";
+            case "xml": return "xml";
+            case "html": return "html";
+            case "css": return "css";
+            case "scss": return "scss";
+            case "json": return "json";
+            case "yaml": return "yaml";
+            case "yml": return "yaml";
+            case "sh": return "bash";
+            case "bash": return "bash";
+            default: return "plaintext";
         }
     }
 

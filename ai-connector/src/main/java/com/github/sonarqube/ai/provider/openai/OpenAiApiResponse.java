@@ -1,5 +1,6 @@
 package com.github.sonarqube.ai.provider.openai;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
  * @author SonarQube AI OWASP Plugin Team
  * @since 1.0.0
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class OpenAiApiResponse {
 
     @JsonProperty("id")
@@ -97,6 +99,7 @@ public class OpenAiApiResponse {
     /**
      * 選擇資料類別
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Choice {
         @JsonProperty("index")
         private Integer index;
@@ -135,6 +138,7 @@ public class OpenAiApiResponse {
     /**
      * 訊息資料類別
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Message {
         @JsonProperty("role")
         private String role;
@@ -162,6 +166,7 @@ public class OpenAiApiResponse {
     /**
      * 使用量資料類別
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Usage {
         @JsonProperty("prompt_tokens")
         private Integer promptTokens;
@@ -200,6 +205,7 @@ public class OpenAiApiResponse {
     /**
      * 錯誤資料類別
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Error {
         @JsonProperty("message")
         private String message;

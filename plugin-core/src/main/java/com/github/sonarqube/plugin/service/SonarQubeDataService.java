@@ -12,6 +12,7 @@ import org.sonarqube.ws.client.HttpConnector;
 import org.sonarqube.ws.client.WsClient;
 import org.sonarqube.ws.client.WsClientFactories;
 import org.sonarqube.ws.client.issues.SearchRequest;
+import org.sonarqube.ws.client.sources.RawRequest;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -175,6 +176,12 @@ public class SonarQubeDataService {
             // 映射嚴重性
             String severity = mapSeverity(issue.getSeverity().name());
 
+            // 獲取代碼片段
+            String codeSnippet = null;
+            if (issue.hasLine()) {
+                codeSnippet = getCodeSnippet(issue.getComponent(), issue.getLine());
+            }
+
             // 建構 SecurityFinding
             return SecurityFinding.builder()
                     .ruleKey(ruleKey)
@@ -186,7 +193,7 @@ public class SonarQubeDataService {
                     .lineNumber(issue.hasLine() ? issue.getLine() : null)
                     .description(issue.getMessage())
                     .fixSuggestion(null)
-                    .codeSnippet(null)
+                    .codeSnippet(codeSnippet)
                     .build();
 
         } catch (Exception e) {
@@ -305,6 +312,47 @@ public class SonarQubeDataService {
             case "INFO":
             default:
                 return "INFO";
+        }
+    }
+
+    /**
+     * 獲取代碼片段
+     *
+     * @param component 元件 key
+     * @param line 行號
+     * @return 代碼片段（前後各 3 行），失敗則返回 null
+     */
+    private String getCodeSnippet(String component, int line) {
+        try {
+            // 計算開始和結束行（前後各 3 行）
+            int fromLine = Math.max(1, line - 3);
+            int toLine = line + 3;
+
+            // 使用 WsClient 的 sources().raw() API
+            String rawSource = wsClient.sources().raw(new RawRequest().setKey(component));
+
+            if (rawSource == null || rawSource.isEmpty()) {
+                LOG.debug("No source code found for component: {}", component);
+                return null;
+            }
+
+            // 分割成行
+            String[] lines = rawSource.split("\r?\n");
+
+            // 提取相關行
+            StringBuilder snippet = new StringBuilder();
+            for (int i = fromLine - 1; i < Math.min(toLine, lines.length); i++) {
+                if (i >= 0 && i < lines.length) {
+                    snippet.append(lines[i]).append("\n");
+                }
+            }
+
+            return snippet.toString().trim();
+
+        } catch (Exception e) {
+            LOG.warn("Failed to get code snippet for component {} at line {}: {}", 
+                    component, line, e.getMessage());
+            return null;
         }
     }
 }

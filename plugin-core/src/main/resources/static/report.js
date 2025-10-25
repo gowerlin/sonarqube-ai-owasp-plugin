@@ -7,6 +7,47 @@ let filteredFindings = [];
 let currentOwaspVersion = '2021';
 let projectKey = 'unknown';
 
+// ==================== 語法高亮輔助函數 ====================
+/**
+ * 根據檔案路徑偵測程式語言
+ * @param {string} filePath - 檔案路徑
+ * @returns {string} - Highlight.js 語言識別碼
+ */
+function detectLanguageFromPath(filePath) {
+    if (!filePath) return 'plaintext';
+
+    const ext = filePath.split('.').pop().toLowerCase();
+    const languageMap = {
+        'cs': 'csharp',
+        'java': 'java',
+        'js': 'javascript',
+        'ts': 'typescript',
+        'jsx': 'jsx',
+        'tsx': 'tsx',
+        'py': 'python',
+        'rb': 'ruby',
+        'go': 'go',
+        'rs': 'rust',
+        'cpp': 'cpp',
+        'c': 'c',
+        'h': 'c',
+        'hpp': 'cpp',
+        'php': 'php',
+        'sql': 'sql',
+        'xml': 'xml',
+        'html': 'html',
+        'css': 'css',
+        'scss': 'scss',
+        'json': 'json',
+        'yaml': 'yaml',
+        'yml': 'yaml',
+        'sh': 'bash',
+        'bash': 'bash'
+    };
+
+    return languageMap[ext] || 'plaintext';
+}
+
 // OWASP 版本定義
 const OWASP_VERSIONS = {
     '2017': {
@@ -278,7 +319,7 @@ function renderFindings() {
             <div class="finding-header">
                 <span class="severity-badge severity-${finding.severity.toLowerCase()}">${severityLabels[finding.severity] || finding.severity}</span>
                 <div class="finding-title">
-                    <h3>${escapeHtml(finding.ruleName || finding.title)}</h3>
+                    <h3>${escapeHtml(finding.ruleName || finding.title)} <span class="expand-hint">▼ 點選展開詳細資訊</span></h3>
                     <div class="finding-meta">
                         <span>📂 ${escapeHtml(finding.filePath)}</span>
                         <span>📍 第 ${finding.lineNumber || 'N/A'} 行</span>
@@ -293,15 +334,20 @@ function renderFindings() {
             <div class="finding-location">
                 <strong>位置：</strong> ${escapeHtml(finding.filePath)}:${finding.lineNumber || '?'}
             </div>
+            ${finding.codeSnippet ? `
+                <div class="original-code-section">
+                    <div class="original-code-header">
+                        <strong>📄 原始程式碼</strong>
+                    </div>
+                    <div class="original-code-snippet">
+                        <pre><code class="language-${detectLanguageFromPath(finding.filePath)}">${escapeHtml(finding.codeSnippet)}</code></pre>
+                    </div>
+                </div>
+            ` : ''}
             <div class="finding-tags">
                 ${finding.tags ? finding.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('') : ''}
             </div>
             <div class="finding-details">
-                ${finding.codeSnippet ? `
-                    <div class="code-snippet">
-                        <pre>${escapeHtml(finding.codeSnippet)}</pre>
-                    </div>
-                ` : ''}
                 ${finding.recommendation ? `
                     <div class="recommendation">
                         <h4>💡 建議</h4>
@@ -314,17 +360,301 @@ function renderFindings() {
                         <p>${escapeHtml(finding.fixSuggestion)}</p>
                     </div>
                 ` : ''}
+                <div class="ai-suggestion-section" id="ai-suggestion-${index}">
+                    ${!finding.aiSuggestion ? `
+                        <button class="btn-ai-suggest" data-index="${index}">
+                            🤖 取得 AI 修復建議
+                        </button>
+                    ` : `
+                        <div class="ai-suggestion-result">
+                            <h4>🤖 AI 修復建議</h4>
+                            <div class="ai-suggestion-content">${escapeHtml(finding.aiSuggestion)}</div>
+                            ${finding.aiTokensUsed ? `<div class="ai-meta">Token 使用量: ${finding.aiTokensUsed} | 處理時間: ${finding.aiProcessingTime}ms</div>` : ''}
+                        </div>
+                    `}
+                </div>
             </div>
         </div>
     `).join('');
 
     // Add event listeners to finding cards
     const cards = document.querySelectorAll('.finding-card');
-    cards.forEach(card => {
-        card.addEventListener('click', function() {
-            this.classList.toggle('expanded');
+    console.log('Found', cards.length, 'finding cards to attach event listeners');
+
+    cards.forEach((card, index) => {
+        card.addEventListener('click', function(e) {
+            console.log('Card', index, 'clicked, current expanded state:', this.classList.contains('expanded'));
+            console.log('Click target:', e.target.tagName, e.target.className);
+
+            // Don't expand if clicking on AI suggestion button
+            if (!e.target.classList.contains('btn-ai-suggest')) {
+                this.classList.toggle('expanded');
+                const isExpanded = this.classList.contains('expanded');
+                console.log('Card', index, 'new expanded state:', isExpanded);
+
+                // Force re-render of details section
+                const details = this.querySelector('.finding-details');
+                if (details) {
+                    console.log('Details section found, display:', window.getComputedStyle(details).display);
+                }
+            }
         });
     });
+
+    // Add event listeners to AI suggestion buttons
+    const aiButtons = document.querySelectorAll('.btn-ai-suggest');
+    aiButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent card expansion
+            const index = parseInt(this.getAttribute('data-index'));
+            requestAiSuggestion(index);
+        });
+    });
+
+    // Apply syntax highlighting to all code blocks
+    // Check if hljs is loaded, if not, wait for it
+    const applyHighlighting = () => {
+        if (typeof hljs !== 'undefined') {
+            document.querySelectorAll('pre code').forEach(block => {
+                hljs.highlightElement(block);
+            });
+            console.log('[OWASP Report] Syntax highlighting applied');
+        } else {
+            console.log('[OWASP Report] Waiting for Highlight.js to load...');
+            setTimeout(applyHighlighting, 100);
+        }
+    };
+    applyHighlighting();
+}
+
+// ==================== AI 建議功能 ====================
+
+// Request AI suggestion for a specific finding
+async function requestAiSuggestion(index) {
+    const finding = filteredFindings[index];
+    if (!finding) {
+        console.error('找不到對應的 finding:', index);
+        return;
+    }
+
+    const section = document.getElementById(`ai-suggestion-${index}`);
+    if (!section) {
+        console.error('找不到 AI 建議區塊:', index);
+        return;
+    }
+
+    // Show loading state
+    section.innerHTML = `
+        <div class="ai-suggestion-loading">
+            <div class="spinner"></div>
+            <p>🤖 AI 正在分析中，請稍候...</p>
+        </div>
+    `;
+
+    try {
+        // 準備 API 請求參數
+        const params = new URLSearchParams({
+            code: finding.codeSnippet || finding.description || 'No code snippet available',
+            owaspCategory: finding.owaspCategory || '',
+            cweId: (finding.cweIds && finding.cweIds.length > 0 ? finding.cweIds[0] : finding.cweId) || '',
+            language: detectLanguage(finding.filePath),
+            fileName: finding.filePath || ''
+        });
+
+        console.log('[AI Suggestion] Requesting AI suggestion for finding:', index);
+        console.log('[AI Suggestion] Request params:', params.toString());
+
+        // 呼叫 AI 建議 API (使用 GET 避免 CSRF 問題)
+        const response = await fetch(`/api/aiowasp/suggest?${params.toString()}`, {
+            method: 'GET',
+            credentials: 'same-origin' // 傳送 session cookie 進行認證
+        });
+
+        if (!response.ok) {
+            throw new Error(`API 請求失敗: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('[AI Suggestion] API response:', data);
+
+        if (!data.success) {
+            throw new Error(data.error || 'AI 分析失敗');
+        }
+
+        // 儲存 AI 建議到 finding 物件
+        finding.aiSuggestion = data.analysisResult;
+        finding.aiTokensUsed = data.tokensUsed;
+        finding.aiProcessingTime = data.processingTimeMs;
+
+        // 顯示 AI 建議結果（格式化顯示）
+        section.innerHTML = formatAiSuggestion(data);
+
+        console.log('[AI Suggestion] AI suggestion displayed successfully');
+
+    } catch (error) {
+        console.error('[AI Suggestion] Error:', error);
+
+        // 顯示錯誤訊息
+        section.innerHTML = `
+            <div class="ai-suggestion-error">
+                <h4>❌ AI 建議取得失敗</h4>
+                <p>${escapeHtml(error.message)}</p>
+                <button class="btn-ai-suggest btn-retry" data-index="${index}">
+                    🔄 重試
+                </button>
+            </div>
+        `;
+
+        // Add event listener to retry button
+        const retryButton = section.querySelector('.btn-retry');
+        if (retryButton) {
+            retryButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const idx = parseInt(this.getAttribute('data-index'));
+                requestAiSuggestion(idx);
+            });
+        }
+    }
+}
+
+// Detect programming language from file path
+function detectLanguage(filePath) {
+    if (!filePath) return 'unknown';
+
+    const ext = filePath.split('.').pop().toLowerCase();
+    const languageMap = {
+        'java': 'java',
+        'js': 'javascript',
+        'jsx': 'javascript',
+        'ts': 'javascript',
+        'tsx': 'javascript',
+        'py': 'python',
+        'cs': 'csharp',
+        'php': 'php',
+        'rb': 'ruby',
+        'go': 'go',
+        'cpp': 'cpp',
+        'c': 'c',
+        'h': 'c',
+        'hpp': 'cpp'
+    };
+
+    return languageMap[ext] || 'unknown';
+}
+
+// 格式化 AI 建議顯示
+function formatAiSuggestion(data) {
+    try {
+        // 嘗試解析 analysisResult 為 JSON
+        let suggestion;
+        try {
+            suggestion = JSON.parse(data.analysisResult);
+        } catch (e) {
+            // 如果不是 JSON 格式，直接顯示原始文字
+            return `
+                <div class="ai-suggestion-result">
+                    <h4>🤖 AI 修復建議</h4>
+                    <div class="ai-suggestion-content">${escapeHtml(data.analysisResult)}</div>
+                    <div class="ai-meta">
+                        Token 使用量: ${data.tokensUsed || 'N/A'} |
+                        處理時間: ${data.processingTimeMs || 'N/A'}ms |
+                        模型: ${data.modelUsed || 'N/A'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 格式化顯示 JSON 結構的建議
+        let html = '<div class="ai-suggestion-result"><h4>🤖 AI 修復建議</h4>';
+
+        // 顯示整體摘要（如果有）
+        if (suggestion.summary) {
+            html += `
+                <div class="ai-summary">
+                    <h5>📋 整體分析</h5>
+                    <p>${escapeHtml(suggestion.summary)}</p>
+                </div>
+            `;
+        }
+
+        // 顯示問題列表
+        if (suggestion.issues && suggestion.issues.length > 0) {
+            suggestion.issues.forEach((issue, index) => {
+                html += `
+                    <div class="ai-issue">
+                        <div class="ai-issue-header">
+                            <span class="severity-badge severity-${issue.severity?.toLowerCase() || 'info'}">
+                                ${issue.severity || 'INFO'}
+                            </span>
+                            ${issue.owaspCategory ? `<span class="owasp-badge">${escapeHtml(issue.owaspCategory)}</span>` : ''}
+                            ${issue.cweId ? `<span class="cwe-badge">${escapeHtml(issue.cweId)}</span>` : ''}
+                        </div>
+
+                        ${issue.description ? `
+                            <div class="ai-description">
+                                <strong>問題描述：</strong>
+                                <p>${escapeHtml(issue.description)}</p>
+                            </div>
+                        ` : ''}
+
+                        ${issue.fixSuggestion ? `
+                            <div class="ai-fix">
+                                <strong>🔧 修復建議：</strong>
+                                <p>${escapeHtml(issue.fixSuggestion)}</p>
+                            </div>
+                        ` : ''}
+
+                        ${issue.codeExample ? `
+                            <div class="ai-code-example">
+                                <div class="code-before">
+                                    <strong>修復前：</strong>
+                                    <pre><code>${escapeHtml(issue.codeExample.before)}</code></pre>
+                                </div>
+                                <div class="code-after">
+                                    <strong>修復後：</strong>
+                                    <pre><code>${escapeHtml(issue.codeExample.after)}</code></pre>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${issue.effortEstimate ? `
+                            <div class="ai-effort">
+                                <strong>⏱️ 預估工作量：</strong>
+                                <span class="effort-badge">${escapeHtml(issue.effortEstimate)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        // 顯示元數據
+        html += `
+            <div class="ai-meta">
+                Token 使用量: ${data.tokensUsed || 'N/A'} |
+                處理時間: ${data.processingTimeMs || 'N/A'}ms |
+                模型: ${data.modelUsed || 'N/A'}
+            </div>
+        </div>
+        `;
+
+        return html;
+
+    } catch (error) {
+        console.error('[AI Suggestion] Format error:', error);
+        // 發生錯誤時顯示原始內容
+        return `
+            <div class="ai-suggestion-result">
+                <h4>🤖 AI 修復建議</h4>
+                <div class="ai-suggestion-content">${escapeHtml(data.analysisResult)}</div>
+                <div class="ai-meta">
+                    Token 使用量: ${data.tokensUsed || 'N/A'} |
+                    處理時間: ${data.processingTimeMs || 'N/A'}ms |
+                    模型: ${data.modelUsed || 'N/A'}
+                </div>
+            </div>
+        `;
+    }
 }
 
 // ==================== UI 狀態 ====================
@@ -471,6 +801,23 @@ window.registerExtension('aiowasp/report', function (options) {
 
             // 清空容器
             container.innerHTML = '';
+
+            // 動態載入 Highlight.js CSS (本地資源)
+            if (!document.querySelector('link[href*="highlight.js"]')) {
+                const highlightCss = document.createElement('link');
+                highlightCss.rel = 'stylesheet';
+                highlightCss.href = '/static/aiowasp/lib/highlight.js/github-dark.min.css';
+                document.head.appendChild(highlightCss);
+                console.log('[OWASP Report] Highlight.js CSS loaded from local');
+            }
+
+            // 動態載入 Highlight.js JavaScript (本地資源)
+            if (!document.querySelector('script[src*="highlight.js"]')) {
+                const highlightJs = document.createElement('script');
+                highlightJs.src = '/static/aiowasp/lib/highlight.js/highlight.min.js';
+                document.head.appendChild(highlightJs);
+                console.log('[OWASP Report] Highlight.js script loaded from local');
+            }
 
             // 提取 head 中的 style 標籤
             const styles = doc.querySelectorAll('style');

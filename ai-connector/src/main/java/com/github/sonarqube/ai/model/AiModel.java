@@ -10,29 +10,92 @@ package com.github.sonarqube.ai.model;
  */
 public enum AiModel {
 
-    /** OpenAI GPT-4 模型 */
-    GPT_4("gpt-4", "OpenAI", 8192, 128000),
+    // ============================================================
+    // OpenAI Models (2025 最新，按推薦順序排列)
+    // ============================================================
 
-    /** OpenAI GPT-4 Turbo 模型 */
+    /** OpenAI GPT-4o 模型 - 旗艦模型 ($2.5/1M in, $10/1M out) */
+    GPT_4O("gpt-4o", "OpenAI", 16384, 128000),
+
+    /** OpenAI GPT-4o Mini 模型 - 極高性價比 ($0.15/1M in, $0.6/1M out) - 最推薦 */
+    GPT_4O_MINI("gpt-4o-mini", "OpenAI", 16384, 128000),
+
+    /** OpenAI GPT-4 Turbo 模型 - 穩定版 ($10/1M in, $30/1M out) */
     GPT_4_TURBO("gpt-4-turbo", "OpenAI", 4096, 128000),
 
-    /** OpenAI GPT-3.5 Turbo 模型 */
+    /** OpenAI GPT-4 模型 - 經典版本 */
+    GPT_4("gpt-4", "OpenAI", 8192, 128000),
+
+    /** OpenAI GPT-3.5 Turbo 模型 - 經濟版本 */
     GPT_3_5_TURBO("gpt-3.5-turbo", "OpenAI", 4096, 16385),
 
-    /** Anthropic Claude 3 Opus 模型 */
+    // ============================================================
+    // Anthropic Claude Models (2025 最新，按推薦順序排列)
+    // ============================================================
+
+    /** Anthropic Claude Sonnet 4.5 - 最聰明模型 (2025-09) - $3/1M in, $15/1M out - 最推薦 */
+    CLAUDE_SONNET_4_5("claude-sonnet-4-5-20250929", "Anthropic", 8192, 200000),
+
+    /** Anthropic Claude Haiku 4.5 - 超高性價比 (2025-10) - $1/1M in, $5/1M out - 最推薦 */
+    CLAUDE_HAIKU_4_5("claude-haiku-4-5-20251001", "Anthropic", 8192, 200000),
+
+    /** Anthropic Claude Opus 4.1 - 旗艦版本 (2025-08) - $15/1M in, $75/1M out */
+    CLAUDE_OPUS_4_1("claude-opus-4-1-20250805", "Anthropic", 8192, 200000),
+
+    /** Anthropic Claude Sonnet 4 - 平衡版本 (2025-05) - $3/1M in, $15/1M out */
+    CLAUDE_SONNET_4("claude-sonnet-4-20250514", "Anthropic", 8192, 200000),
+
+    /** Anthropic Claude Opus 4 - 推理專用 (2025-05) - $15/1M in, $75/1M out */
+    CLAUDE_OPUS_4("claude-opus-4-20250514", "Anthropic", 8192, 200000),
+
+    /** Anthropic Claude 3.7 Sonnet - 穩定版 (2025-02) - $3/1M in, $15/1M out */
+    CLAUDE_3_7_SONNET("claude-3-7-sonnet-20250219", "Anthropic", 8192, 200000),
+
+    /** Anthropic Claude 3.5 Sonnet - 頂尖編碼 (2024-10) - $3/1M in, $15/1M out */
+    CLAUDE_3_5_SONNET("claude-3-5-sonnet-20241022", "Anthropic", 8192, 200000),
+
+    /** Anthropic Claude 3.5 Haiku - 快速版 (2024-10) - $1/1M in, $5/1M out */
+    CLAUDE_3_5_HAIKU("claude-3-5-haiku-20241022", "Anthropic", 8192, 200000),
+
+    /** Anthropic Claude 3 Opus - 最強推理 ($15/1M in, $75/1M out) */
     CLAUDE_3_OPUS("claude-3-opus-20240229", "Anthropic", 4096, 200000),
 
-    /** Anthropic Claude 3 Sonnet 模型 */
+    /** Anthropic Claude 3 Sonnet - 平衡版本 */
     CLAUDE_3_SONNET("claude-3-sonnet-20240229", "Anthropic", 4096, 200000),
 
-    /** Anthropic Claude 3 Haiku 模型 */
+    /** Anthropic Claude 3 Haiku - 快速經濟版本 */
     CLAUDE_3_HAIKU("claude-3-haiku-20240307", "Anthropic", 4096, 200000),
 
-    /** Google Gemini 1.5 Pro 模型 */
-    GEMINI_1_5_PRO("gemini-1.5-pro", "Google", 8192, 1000000),
+    // ============================================================
+    // Google Gemini Models (2025 最新，按推薦順序排列)
+    // ============================================================
 
-    /** Google Gemini 1.5 Flash 模型 */
-    GEMINI_1_5_FLASH("gemini-1.5-flash", "Google", 8192, 1000000);
+    /** Google Gemini 2.5 Pro - 最新 thinking 模型 (2025) */
+    GEMINI_2_5_PRO("gemini-2.5-pro", "Google", 8192, 2000000),
+
+    /** Google Gemini 2.5 Flash - thinking enabled (2025) - 最推薦 */
+    GEMINI_2_5_FLASH("gemini-2.5-flash", "Google", 8192, 1000000),
+
+    /** Google Gemini 2.5 Flash Lite - 超快超便宜 ($0.1/1M in, $0.4/1M out) - 最推薦 */
+    GEMINI_2_5_FLASH_LITE("gemini-2.5-flash-lite", "Google", 8192, 1000000),
+
+    /** Google Gemini 2.0 Flash - $0.1/1M in, $0.4/1M out */
+    GEMINI_2_0_FLASH("gemini-2.0-flash", "Google", 8192, 1000000),
+
+    /** Google Gemini 2.0 Flash Lite - 預覽版，最低成本 */
+    GEMINI_2_0_FLASH_LITE("gemini-2.0-flash-lite", "Google", 8192, 1000000),
+
+    /** Google Gemini 2.0 Pro Experimental - 編碼專用實驗版 */
+    GEMINI_2_0_PRO_EXP("gemini-2.0-pro-exp", "Google", 8192, 1000000),
+
+    /** Google Gemini 1.5 Pro - 旗艦版本 (2M context) */
+    GEMINI_1_5_PRO("gemini-1.5-pro", "Google", 8192, 2000000),
+
+    /** Google Gemini 1.5 Flash - 快速版本 (1M context) */
+    GEMINI_1_5_FLASH("gemini-1.5-flash", "Google", 8192, 1000000),
+
+    /** Google Gemini Pro - 穩定版本 */
+    GEMINI_PRO("gemini-pro", "Google", 8192, 32768);
 
     private final String modelId;
     private final String provider;

@@ -1,5 +1,6 @@
 package com.github.sonarqube.plugin;
 
+import com.github.sonarqube.plugin.api.AiSuggestionController;
 import com.github.sonarqube.plugin.api.CliStatusApiController;
 // import com.github.sonarqube.plugin.api.ConfigurationApiController; // TODO: 需要實作 AiConfiguration, ConfigurationManager, ScanScopeConfiguration 類別後才能啟用
 import com.github.sonarqube.plugin.api.OwaspVersionApiController;
@@ -36,12 +37,19 @@ public class AiOwaspPlugin implements Plugin {
     public static final String CATEGORY_REPORT = "Reporting";
 
     // AI 模型配置
+    public static final String PROPERTY_AI_ENABLED = "sonar.aiowasp.ai.enabled";
     public static final String PROPERTY_AI_PROVIDER = "sonar.aiowasp.ai.provider";
-    public static final String PROPERTY_AI_API_KEY = "sonar.aiowasp.ai.apikey";
+
+    // Provider 專用 API Keys (Epic 10)
+    public static final String PROPERTY_OPENAI_API_KEY = "sonar.aiowasp.ai.openai.apikey";
+    public static final String PROPERTY_ANTHROPIC_API_KEY = "sonar.aiowasp.ai.anthropic.apikey";
+    public static final String PROPERTY_GOOGLE_API_KEY = "sonar.aiowasp.ai.google.apikey";
+
     public static final String PROPERTY_AI_MODEL = "sonar.aiowasp.ai.model";
     public static final String PROPERTY_AI_TEMPERATURE = "sonar.aiowasp.ai.temperature";
     public static final String PROPERTY_AI_MAX_TOKENS = "sonar.aiowasp.ai.maxTokens";
     public static final String PROPERTY_AI_TIMEOUT = "sonar.aiowasp.ai.timeout";
+    public static final String PROPERTY_AI_RESPONSE_LANGUAGE = "sonar.aiowasp.ai.responseLanguage";
 
     // CLI 模式配置 (Epic 9)
     public static final String PROPERTY_CLI_GEMINI_PATH = "sonar.aiowasp.cli.gemini.path";
@@ -75,10 +83,13 @@ public class AiOwaspPlugin implements Plugin {
         // 註冊 Web 頁面 (Epic 5.6 + 7.4)
         defineWebPages(context);
 
-        // 註冊擴充功能
+        // 註冊掃描器 (Sensor)
+        context.addExtension(OwaspSensor.class);
+        LOG.debug("已註冊 OwaspSensor");
+
+        // 註冊其他擴充功能
         // TODO: 在後續 Epic 中實現
         // - 規則定義 (RulesDefinition)
-        // - 掃描器 (Scanner)
         // - 品質檔案 (QualityProfile)
         // - 度量指標 (Metrics)
 
@@ -93,6 +104,18 @@ public class AiOwaspPlugin implements Plugin {
         // AI 配置
         // ============================================================
         context.addExtension(
+            PropertyDefinition.builder(PROPERTY_AI_ENABLED)
+                .name("Enable AI Analysis")
+                .description("啟用或停用 AI 安全分析功能")
+                .category(CATEGORY_AI)
+                .subCategory("General")
+                .defaultValue("true")
+                .type(PropertyType.BOOLEAN)
+                .index(1)
+                .build()
+        );
+
+        context.addExtension(
             PropertyDefinition.builder(PROPERTY_AI_PROVIDER)
                 .name("AI Provider")
                 .description("AI 模型供應商")
@@ -101,33 +124,94 @@ public class AiOwaspPlugin implements Plugin {
                 .defaultValue("openai")
                 .options("openai", "anthropic", "gemini-api", "gemini-cli", "copilot-cli", "claude-cli")
                 .type(PropertyType.SINGLE_SELECT_LIST)
-                .index(1)
+                .index(2)
+                .build()
+        );
+
+        // Provider 專用 API Keys (Epic 10)
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_OPENAI_API_KEY)
+                .name("OpenAI API Key")
+                .description("OpenAI 專用 API 金鑰")
+                .category(CATEGORY_AI)
+                .subCategory("Authentication")
+                .type(PropertyType.PASSWORD)
+                .index(3)
                 .build()
         );
 
         context.addExtension(
-            PropertyDefinition.builder(PROPERTY_AI_API_KEY)
-                .name("AI API Key")
-                .description("AI 模型的 API 金鑰（加密存儲）")
+            PropertyDefinition.builder(PROPERTY_ANTHROPIC_API_KEY)
+                .name("Anthropic API Key")
+                .description("Anthropic Claude 專用 API 金鑰")
                 .category(CATEGORY_AI)
                 .subCategory("Authentication")
                 .type(PropertyType.PASSWORD)
-                .index(2)
+                .index(4)
+                .build()
+        );
+
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_GOOGLE_API_KEY)
+                .name("Google API Key")
+                .description("Google Gemini 專用 API 金鑰")
+                .category(CATEGORY_AI)
+                .subCategory("Authentication")
+                .type(PropertyType.PASSWORD)
+                .index(5)
                 .build()
         );
 
         context.addExtension(
             PropertyDefinition.builder(PROPERTY_AI_MODEL)
                 .name("AI Model")
-                .description("使用的 AI 模型名稱 (gpt-4, claude-3-opus, gemini-1.5-pro)")
+                .description("選擇與 AI Provider 對應的模型 | OpenAI: gpt-4o* | Anthropic: claude-3.7*, claude-3.5* | Gemini: gemini-2.5*, gemini-2.0*")
                 .category(CATEGORY_AI)
                 .subCategory("Model Selection")
-                .defaultValue("gpt-4")
-                .options("gpt-4", "gpt-4-turbo", "gpt-3.5-turbo",
-                         "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307",
-                         "gemini-1.5-pro", "gemini-1.5-flash")
+                .defaultValue("gpt-4o")
+                .options(
+                    // ============================================================
+                    // OpenAI Models (推薦: 安全分析性價比最佳)
+                    // ============================================================
+                    "gpt-4o",                    // ⭐⭐ 旗艦 - $2.5/1M in, $10/1M out (128K) - 強大編碼
+                    "gpt-4o-mini",               // ⭐⭐⭐ 最推薦 - $0.15/1M in, $0.6/1M out - 極高性價比
+                    "gpt-4-turbo",               // 穩定版 - $10/1M in, $30/1M out (128K)
+                    "gpt-4",                     // 經典版 (8K context)
+                    "gpt-3.5-turbo",             // 經濟版 (16K context)
+
+                    // ============================================================
+                    // Anthropic Claude Models (推薦: 最佳編碼 + 推理能力)
+                    // ============================================================
+                    // Claude 4 系列 (2025 最新)
+                    "claude-sonnet-4-5-20250929",  // ⭐⭐⭐ 最聰明模型 (2025-09) - $3/1M in, $15/1M out
+                    "claude-haiku-4-5-20251001",   // ⭐⭐⭐ 超高性價比 (2025-10) - $1/1M in, $5/1M out
+                    "claude-opus-4-1-20250805",    // 旗艦版本 (2025-08) - $15/1M in, $75/1M out
+                    "claude-sonnet-4-20250514",    // 平衡版本 (2025-05) - $3/1M in, $15/1M out
+                    "claude-opus-4-20250514",      // 推理專用 (2025-05) - $15/1M in, $75/1M out
+
+                    // Claude 3 系列
+                    "claude-3-7-sonnet-20250219",  // ⭐⭐ 穩定版 (2025-02) - $3/1M in, $15/1M out
+                    "claude-3-5-sonnet-20241022",  // ⭐ 頂尖編碼 (2024-10) - $3/1M in, $15/1M out
+                    "claude-3-5-haiku-20241022",   // 快速版 (2024-10) - $1/1M in, $5/1M out
+                    "claude-3-opus-20240229",      // 最強推理 (200K) - $15/1M in, $75/1M out
+                    "claude-3-sonnet-20240229",    // 平衡版 (200K)
+                    "claude-3-haiku-20240307",     // 快速經濟 (200K)
+
+                    // ============================================================
+                    // Google Gemini Models (推薦: 超大 context + 最低價)
+                    // ============================================================
+                    "gemini-2.5-pro",            // ⭐⭐ 最新 thinking 模型 (2025)
+                    "gemini-2.5-flash",          // ⭐⭐⭐ 最推薦 - thinking enabled
+                    "gemini-2.5-flash-lite",     // ⭐⭐⭐ 超快超便宜 - $0.1/1M in, $0.4/1M out
+                    "gemini-2.0-flash",          // $0.1/1M in, $0.4/1M out
+                    "gemini-2.0-flash-lite",     // 預覽版 - 最低成本
+                    "gemini-2.0-pro-exp",        // 實驗版 - 編碼專用
+                    "gemini-1.5-pro",            // 旗艦版 (2M context)
+                    "gemini-1.5-flash",          // 快速版 (1M context)
+                    "gemini-pro"                 // 穩定版
+                )
                 .type(PropertyType.SINGLE_SELECT_LIST)
-                .index(3)
+                .index(6)
                 .build()
         );
 
@@ -139,7 +223,7 @@ public class AiOwaspPlugin implements Plugin {
                 .subCategory("Model Parameters")
                 .defaultValue("0.3")
                 .type(PropertyType.FLOAT)
-                .index(4)
+                .index(7)
                 .build()
         );
 
@@ -151,7 +235,7 @@ public class AiOwaspPlugin implements Plugin {
                 .subCategory("Model Parameters")
                 .defaultValue("2000")
                 .type(PropertyType.INTEGER)
-                .index(5)
+                .index(8)
                 .build()
         );
 
@@ -163,7 +247,20 @@ public class AiOwaspPlugin implements Plugin {
                 .subCategory("Model Parameters")
                 .defaultValue("60")
                 .type(PropertyType.INTEGER)
-                .index(6)
+                .index(9)
+                .build()
+        );
+
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_AI_RESPONSE_LANGUAGE)
+                .name("Response Language")
+                .description("AI 回應的語言偏好 (English or Traditional Chinese)")
+                .category(CATEGORY_AI)
+                .subCategory("Model Parameters")
+                .defaultValue("zh-TW")
+                .options("en-US", "zh-TW")
+                .type(PropertyType.SINGLE_SELECT_LIST)
+                .index(10)
                 .build()
         );
 
@@ -177,7 +274,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_AI)
                 .subCategory("CLI Configuration")
                 .defaultValue("/usr/local/bin/gemini")
-                .index(7)
+                .index(9)
                 .build()
         );
 
@@ -188,7 +285,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_AI)
                 .subCategory("CLI Configuration")
                 .defaultValue("/usr/local/bin/gh")
-                .index(8)
+                .index(10)
                 .build()
         );
 
@@ -199,7 +296,7 @@ public class AiOwaspPlugin implements Plugin {
                 .category(CATEGORY_AI)
                 .subCategory("CLI Configuration")
                 .defaultValue("/usr/local/bin/claude")
-                .index(9)
+                .index(11)
                 .build()
         );
 
@@ -335,7 +432,10 @@ public class AiOwaspPlugin implements Plugin {
         // CLI 狀態檢查 API (Epic 9)
         context.addExtension(CliStatusApiController.class);
 
-        LOG.debug("已註冊 {} 個 Web Service (含 SonarQubeDataService)", 5);  // 暫時停用 ConfigurationApiController
+        // AI 建議 API - 按需生成修復建議（節省 Token）
+        context.addExtension(AiSuggestionController.class);
+
+        LOG.debug("已註冊 {} 個 Web Service (含 SonarQubeDataService)", 6);  // 暫時停用 ConfigurationApiController
     }
 
     /**

@@ -134,11 +134,19 @@ public class OpenAiService implements AiService {
         apiRequest.setTemperature(config.getTemperature());
         apiRequest.setMaxTokens(config.getMaxTokens());
 
-        // 系統提示
-        apiRequest.addMessage("system", PromptTemplate.SYSTEM_PROMPT);
+        // 判斷分析模式（使用 analysisType 欄位）
+        boolean isDetectionOnly = "detection".equalsIgnoreCase(request.getAnalysisType());
 
-        // 用戶提示
-        String userPrompt = PromptTemplate.createAnalysisPrompt(request);
+        // 系統提示（根據模式選擇）
+        String systemPrompt = isDetectionOnly
+            ? PromptTemplate.SYSTEM_PROMPT_DETECTION_ONLY
+            : PromptTemplate.SYSTEM_PROMPT;
+        apiRequest.addMessage("system", systemPrompt);
+
+        // 用戶提示（根據模式選擇）
+        String userPrompt = isDetectionOnly
+            ? PromptTemplate.createDetectionOnlyPrompt(request)
+            : PromptTemplate.createAnalysisPrompt(request);
         apiRequest.addMessage("user", userPrompt);
 
         return apiRequest;

@@ -21,6 +21,7 @@ import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
@@ -47,12 +48,18 @@ public class OwaspSensor implements Sensor {
     private static final Logger LOG = Loggers.get(OwaspSensor.class);
 
     private final PluginConfiguration config;
-    private final AiService aiService;
+    private final Configuration sonarConfig; // SonarQube 配置（用於讀取 Admin 設定的 API Key）
+    private AiService aiService; // 延遲初始化，只有在 AI 分析啟用時才建立
     private final Map<String, RuleDefinition> ruleMap;
 
-    public OwaspSensor() {
+    /**
+     * 建構子（SonarQube 會自動注入 Configuration）
+     */
+    public OwaspSensor(Configuration configuration) {
         this.config = PluginConfiguration.getInstance();
-        this.aiService = AiServiceFactory.createService(convertToAiConfig(config));
+        this.sonarConfig = configuration;
+        // 不在建構子中初始化 aiService，避免配置不完整時失敗
+        this.aiService = null;
 
         // 建立規則映射表以便快速查詢
         this.ruleMap = buildRuleMap();
@@ -65,62 +72,167 @@ public class OwaspSensor implements Sensor {
      * @return AI 配置物件
      */
     private AiConfig convertToAiConfig(PluginConfiguration pluginConfig) {
-        // 從環境變數或系統屬性取得 API Key
-        String apiKey = System.getenv("AI_API_KEY");
-        if (apiKey == null) {
-            apiKey = System.getProperty("ai.api.key", "");
-        }
+        // 取得 AI Provider
+        String provider = sonarConfig.get(com.github.sonarqube.plugin.AiOwaspPlugin.PROPERTY_AI_PROVIDER)
+            .orElse("openai");
 
-        // 從環境變數或系統屬性取得 API Endpoint
-        String apiEndpoint = System.getenv("AI_API_ENDPOINT");
-        if (apiEndpoint == null) {
-            apiEndpoint = System.getProperty("ai.api.endpoint", "");
-        }
+        // 根據 Provider 讀取對應的 API Key
+        String apiKey = getApiKeyForProvider(provider);
 
-        // 從模型 ID 字串轉換為 AiModel 枚舉，如果找不到則使用 GPT-4 作為預設值
-        AiModel model = AiModel.fromModelId(pluginConfig.getAiModel());
+        // 取得 API Endpoint（根據 AI Provider 推斷）
+        String apiEndpoint = getApiEndpointForProvider(provider);
+
+        // 從 SonarQube Configuration 讀取 AI 模型
+        String modelId = sonarConfig.get(com.github.sonarqube.plugin.AiOwaspPlugin.PROPERTY_AI_MODEL)
+            .orElse(pluginConfig.getAiModel());
+
+        // 從模型 ID 字串轉換為 AiModel 枚舉
+        AiModel model = AiModel.fromModelId(modelId);
         if (model == null) {
-            LOG.warn("無法識別的 AI 模型 ID: {}，使用預設模型 GPT-4", pluginConfig.getAiModel());
+            LOG.warn("無法識別的 AI 模型 ID: {}，使用預設模型 GPT-4", modelId);
             model = AiModel.GPT_4;
         }
+
+        // 讀取其他配置參數
+        double temperature = sonarConfig.getDouble(com.github.sonarqube.plugin.AiOwaspPlugin.PROPERTY_AI_TEMPERATURE)
+            .orElse(0.3);
+        int maxTokens = sonarConfig.getInt(com.github.sonarqube.plugin.AiOwaspPlugin.PROPERTY_AI_MAX_TOKENS)
+            .orElse(2000);
+        int timeout = sonarConfig.getInt(com.github.sonarqube.plugin.AiOwaspPlugin.PROPERTY_AI_TIMEOUT)
+            .orElse(60);
+
+        LOG.info("AI 配置: provider={}, model={}, endpoint={}, timeout={}s",
+            provider, modelId, apiEndpoint, timeout);
 
         return AiConfig.builder()
             .model(model)
             .apiKey(apiKey)
             .apiEndpoint(apiEndpoint)
-            .timeoutSeconds(pluginConfig.getAiTimeout() / 1000)
-            .temperature(0.3)  // 預設值：較保守的創造性
-            .maxTokens(4096)   // 預設值：標準 token 限制
-            .maxRetries(3)     // 預設值：重試 3 次
-            .retryDelayMs(1000L)  // 預設值：重試延遲 1 秒
-            .executionMode(AiExecutionMode.API)  // 預設值：API 模式
+            .timeoutSeconds(timeout)
+            .temperature(temperature)
+            .maxTokens(maxTokens)
+            .maxRetries(3)
+            .retryDelayMs(1000L)
+            .executionMode(AiExecutionMode.API)
             .build();
+    }
+
+    /**
+     * 根據 AI Provider 取得對應的 API Endpoint
+     */
+    private String getApiEndpointForProvider(String provider) {
+        switch (provider.toLowerCase()) {
+            case "openai":
+                return "https://api.openai.com/v1/chat/completions";
+            case "anthropic":
+                return "https://api.anthropic.com/v1/messages";
+            case "gemini-api":
+                return "https://generativelanguage.googleapis.com/v1/models";
+            default:
+                LOG.warn("未知的 AI Provider: {}, 使用 OpenAI endpoint", provider);
+                return "https://api.openai.com/v1/chat/completions";
+        }
+    }
+
+    /**
+     * 根據 AI Provider 取得對應的 API Key
+     *
+     * @param provider AI Provider 名稱
+     * @return API Key
+     * @throws IllegalStateException 如果 API Key 未配置
+     */
+    private String getApiKeyForProvider(String provider) {
+        String apiKey = null;
+        String providerKeyName = null;
+
+        // 根據 Provider 讀取對應的專用 API Key
+        switch (provider.toLowerCase()) {
+            case "openai":
+                providerKeyName = "OpenAI API Key";
+                apiKey = sonarConfig.get(AiOwaspPlugin.PROPERTY_OPENAI_API_KEY).orElse(null);
+                break;
+            case "anthropic":
+                providerKeyName = "Anthropic API Key";
+                apiKey = sonarConfig.get(AiOwaspPlugin.PROPERTY_ANTHROPIC_API_KEY).orElse(null);
+                break;
+            case "gemini-api":
+                providerKeyName = "Google API Key";
+                apiKey = sonarConfig.get(AiOwaspPlugin.PROPERTY_GOOGLE_API_KEY).orElse(null);
+                break;
+            default:
+                throw new IllegalStateException(String.format(
+                    "不支援的 AI Provider: %s。支援的 Provider: openai, anthropic, gemini-api",
+                    provider
+                ));
+        }
+
+        // 檢查 API Key 是否已配置
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new IllegalStateException(String.format(
+                "%s 未配置: 請在 SonarQube Administration > AI OWASP Plugin > Authentication 中設定",
+                providerKeyName
+            ));
+        }
+
+        LOG.info("使用 {} (Provider: {})", providerKeyName, provider);
+        return apiKey;
     }
 
     @Override
     public void describe(SensorDescriptor descriptor) {
         descriptor
                 .name("OWASP AI Security Sensor")
-                .onlyOnLanguages("java", "js")
-                .global();
+                .global();  // 支援所有 SonarQube 語言
     }
 
     @Override
     public void execute(SensorContext context) {
-        if (!config.isAiAnalysisEnabled()) {
-            LOG.info("OWASP AI 分析已停用，略過掃描");
+        // 檢查 AI 分析是否啟用（從 SonarQube Admin 設定讀取）
+        boolean aiEnabled = sonarConfig.getBoolean(com.github.sonarqube.plugin.AiOwaspPlugin.PROPERTY_AI_ENABLED)
+            .orElse(true);
+
+        if (!aiEnabled) {
+            LOG.info("OWASP AI 分析已停用（從 SonarQube Configuration 設定），略過掃描");
             return;
+        }
+
+        // 延遲初始化 AI 服務（只有在 AI 分析啟用時才建立）
+        if (this.aiService == null) {
+            try {
+                this.aiService = AiServiceFactory.createService(convertToAiConfig(config));
+                LOG.info("AI 服務初始化成功");
+            } catch (IllegalStateException e) {
+                LOG.error("AI 配置無效，無法初始化 AI 服務: {}", e.getMessage());
+                LOG.info("請在 SonarQube 管理介面配置 AI API Key 和 Endpoint");
+                LOG.info("或設定環境變數: AI_API_KEY, AI_API_ENDPOINT");
+                return;
+            }
         }
 
         LOG.info("開始 OWASP AI 安全掃描 (OWASP 版本: {})", VersionManager.getCurrentVersion().getVersion());
 
         FileSystem fileSystem = context.fileSystem();
 
-        // 掃描 Java 檔案
-        scanFiles(context, fileSystem, "java", "owasp-java");
+        // 取得專案中所有檔案
+        Iterable<InputFile> allFiles = fileSystem.inputFiles(fileSystem.predicates().all());
 
-        // 掃描 JavaScript 檔案
-        scanFiles(context, fileSystem, "js", "owasp-javascript");
+        // 按語言分組並掃描
+        Map<String, Integer> languageStats = new java.util.HashMap<>();
+        for (InputFile file : allFiles) {
+            String language = file.language();
+            if (language != null && !language.isEmpty()) {
+                languageStats.merge(language, 1, Integer::sum);
+            }
+        }
+
+        LOG.info("專案包含 {} 種程式語言: {}", languageStats.size(), languageStats.keySet());
+
+        // 對每種語言執行掃描
+        for (String language : languageStats.keySet()) {
+            String repositoryKey = "owasp-" + language;
+            LOG.info("開始掃描 {} 檔案 (共 {} 個檔案)", language, languageStats.get(language));
+            scanFiles(context, fileSystem, language, repositoryKey);
+        }
 
         LOG.info("OWASP AI 安全掃描完成");
     }
@@ -151,16 +263,19 @@ public class OwaspSensor implements Sensor {
 
     /**
      * 使用 AI 分析單一檔案
+     *
+     * 注意：掃描時使用「detection」模式，只檢測問題不生成修復建議，以節省 Token。
+     * 詳細的修復建議可透過 Web API 按需取得（/api/aiowasp/suggest）。
      */
     private List<SecurityIssue> analyzeFile(InputFile file) throws IOException {
         // 讀取檔案內容
         String content = new String(Files.readAllBytes(file.path()), StandardCharsets.UTF_8);
 
-        // 建立 AI 請求 (builder 需要 code 參數)
+        // 建立 AI 請求（使用 "detection" 模式，只檢測問題不生成建議）
         AiRequest request = AiRequest.builder(content)
                 .language(file.language())
                 .fileName(file.filename())
-                .analysisType("security")
+                .analysisType("detection")  // 使用檢測模式，節省 Token
                 .owaspVersion(VersionManager.getCurrentVersion().getVersion())
                 .build();
 
@@ -213,9 +328,21 @@ public class OwaspSensor implements Sensor {
                         .on(file)
                         .message(message);
 
-                // 如果有行號，設定行號
+                // 如果有行號，設定行號（需驗證行號有效性）
                 if (issue.getLineNumber() != null && issue.getLineNumber() > 0) {
-                    location.at(file.selectLine(issue.getLineNumber()));
+                    int lineNumber = issue.getLineNumber();
+                    int totalLines = file.lines();
+
+                    // 驗證行號是否在有效範圍內
+                    if (lineNumber <= totalLines) {
+                        // 行號有效，設定具體行位置
+                        location.at(file.selectLine(lineNumber));
+                    } else {
+                        // 行號無效，記錄警告並降級為檔案級別問題
+                        LOG.warn("AI 回應的行號 {} 超過檔案 {} 的總行數 {}，將使用檔案級別問題",
+                                lineNumber, file.relativePath(), totalLines);
+                        // location 已經設定在檔案上（第 287-289 行），不需要額外操作
+                    }
                 }
 
                 newIssue.at(location);
