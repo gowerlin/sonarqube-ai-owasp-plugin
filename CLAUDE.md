@@ -326,6 +326,118 @@ curl -u admin:P@ssw0rd \
 
 ---
 
+## 前端開發原則
+
+### SonarQube CSP (Content Security Policy) 合規
+
+**重要**: SonarQube 強制執行嚴格的 CSP 政策，所有前端代碼必須遵守以下規則：
+
+#### 禁止使用 Inline Event Handlers
+```javascript
+// ❌ 錯誤：Inline event handlers 違反 CSP
+<button onclick="handleClick()">Click</button>
+<a href="javascript:void(0)" onclick="doSomething()">Link</a>
+
+// ✅ 正確：使用 addEventListener
+<button class="btn-action" data-index="0">Click</button>
+
+// JavaScript
+const buttons = document.querySelectorAll('.btn-action');
+buttons.forEach(button => {
+    button.addEventListener('click', function(e) {
+        const index = parseInt(this.getAttribute('data-index'));
+        handleClick(index);
+    });
+});
+```
+
+#### 靜態資源路徑規則
+**檔案位置**: `plugin-core/src/main/resources/static/`
+
+所有靜態資源（CSS、JS、圖片）必須放在此目錄，SonarQube 會自動掛載為：
+- `report.html` → `/static/report.html`
+- `report.js` → `/static/report.js`
+- `report.css` → `/static/report.css`
+
+#### HTML 報告 UI 架構
+**主檔案**: `plugin-core/src/main/resources/static/report.html`
+
+**關鍵 CSS 類別**:
+- `.original-code-section`: 代碼區塊容器（深色背景 `#1e1e1e`）
+- `.original-code-header`: 代碼區塊標題（深灰背景 `#252525`）
+- `.original-code-snippet`: 代碼內容區（包含語法高亮）
+
+**VS Code 深色主題配色**:
+```css
+/* 背景與文字 */
+background: #1e1e1e;
+color: #d4d4d4;
+
+/* 語法高亮 */
+.hljs-keyword { color: #569cd6; }  /* 藍色 - 關鍵字 */
+.hljs-string { color: #ce9178; }   /* 橘色 - 字串 */
+.hljs-number { color: #b5cea8; }   /* 淺綠 - 數字 */
+.hljs-comment { color: #6a9955; }  /* 深綠 - 註解 */
+.hljs-function { color: #dcdcaa; } /* 淺黃 - 函式 */
+.hljs-variable { color: #4ec9b0; } /* 青色 - 變數 */
+```
+
+#### Chart.js 整合
+**前端圖表**: 使用 Chart.js 生成互動式圖表
+
+**範例** (`report.js` lines 225-309):
+```javascript
+function createSeverityChart(summary) {
+    const ctx = document.getElementById('severityChart');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Blocker', 'Critical', 'Major', 'Minor', 'Info'],
+            datasets: [{
+                data: [
+                    summary.blockerCount,
+                    summary.criticalCount,
+                    summary.majorCount,
+                    summary.minorCount,
+                    summary.infoCount
+                ],
+                backgroundColor: ['#d32f2f', '#f57c00', '#fbc02d', '#689f38', '#1976d2']
+            }]
+        }
+    });
+}
+```
+
+#### API 整合規則
+**重要**: 前端呼叫 SonarQube API 的注意事項
+
+1. **GET 請求優先**: 避免 POST CSRF Token 複雜性
+2. **Credentials 設定**: 必須加上 `credentials: 'same-origin'`
+3. **錯誤處理**: 提供使用者友善的錯誤訊息
+
+**範例**:
+```javascript
+fetch(`/api/aiowasp/suggest?${params}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    credentials: 'same-origin'
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+})
+.catch(error => {
+    console.error('API Error:', error);
+    alert('無法取得 AI 建議，請稍後再試');
+});
+```
+
+---
+
 ## 常見問題排查
 
 ### 問題 1: ClassNotFoundException: org.sonarqube.ws.client.WsConnector
@@ -435,5 +547,5 @@ String cweId = request.param(PARAM_CWE_ID); // 改為 param()，不使用 mandat
 
 ---
 
-**最後更新**: 2025-10-24
+**最後更新**: 2025-10-25
 **版本**: 1.0.0-SNAPSHOT
