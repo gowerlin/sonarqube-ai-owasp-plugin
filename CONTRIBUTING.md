@@ -189,13 +189,13 @@ make test
 
 ### 手動設置
 **系統需求**：
-- Java 11+ (建議 OpenJDK 17)
+- Java 17+
 - Maven 3.8+
 - Docker & Docker Compose（用於本地 SonarQube）
 
 **步驟**：
 ```bash
-# 1. 安裝 Java 11+
+# 1. 安裝 Java 17+
 java -version  # 確認版本
 
 # 2. 安裝 Maven 3.8+
