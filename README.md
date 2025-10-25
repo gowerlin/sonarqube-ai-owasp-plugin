@@ -9,6 +9,34 @@
 
 ---
 
+## 🔍 AI Provider 開發/實測狀況追蹤
+
+| Provider | 類型 | 模式 | 開發狀態 | 實測狀態 | 備註 |
+|----------|------|------|---------|---------|------|
+| **OpenAI GPT-4** | API | HTTP API | ✅ 已完成 | ✅ 已驗證 | 主要測試 Provider，功能完整 |
+| **Anthropic Claude** | API | HTTP API | ✅ 已完成 | ⏳ 待測試 | API 整合已實作，待取得 API Key 測試 |
+| **Google Gemini API** | API | HTTP API | ✅ 已完成 | ⏳ 待測試 | API 整合已實作，待取得 API Key 測試 |
+| **Gemini CLI** | CLI | 本地工具 | ✅ 已完成 | ⏳ 待測試 | CLI 執行器已實作，待安裝工具測試 |
+| **GitHub Copilot CLI** | CLI | 本地工具 | ✅ 已完成 | ⏳ 待測試 | CLI 執行器已實作，待安裝工具測試 |
+| **Claude CLI** | CLI | 本地工具 | ✅ 已完成 | ⏳ 待測試 | CLI 執行器已實作，待安裝工具測試 |
+
+**圖例說明**:
+- ✅ **已完成/已驗證**: 開發完成並通過實測
+- ⏳ **待測試**: 代碼已實作，等待環境配置與實際測試
+- ❌ **未完成**: 尚未開發或測試失敗
+
+**測試優先順序**:
+1. ✅ **OpenAI GPT-4** - 已驗證，作為基準參考
+2. **Anthropic Claude API** - 高優先級（長文本處理能力強）
+3. **Google Gemini API** - 高優先級（超大上下文窗口，成本低）
+4. **Gemini CLI** - 中優先級（本地執行，無 API 費用）
+5. **GitHub Copilot CLI** - 中優先級（GitHub 企業用戶適用）
+6. **Claude CLI** - 低優先級（功能與 Claude API 類似）
+
+**最後更新**: 2025-10-25
+
+---
+
 ## ✨ 核心功能
 
 ### 🤖 AI 智能分析
