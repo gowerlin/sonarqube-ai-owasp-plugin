@@ -2138,6 +2138,6 @@ AiProviderFactory
 
 ---
 
-[Unreleased]: https://github.com/your-org/sonarqube-ai-owasp-plugin/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/your-org/sonarqube-ai-owasp-plugin/releases/tag/v2.0.0
-[1.0.0-SNAPSHOT]: https://github.com/your-org/sonarqube-ai-owasp-plugin/releases/tag/v1.0.0-SNAPSHOT
+[Unreleased]: https://github.com/gowerlin/sonarqube-ai-owasp-plugin/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/gowerlin/sonarqube-ai-owasp-plugin/releases/tag/v2.0.0
+[1.0.0-SNAPSHOT]: https://github.com/gowerlin/sonarqube-ai-owasp-plugin/releases/tag/v1.0.0-SNAPSHOT

@@ -309,7 +309,7 @@ gh release create v1.0.0 \
 ## 聯絡資訊
 
 - **問題回報**: GitHub Issues
-- **技術支持**: dev@your-org.com
+- **GitHub**: https://github.com/gowerlin
 - **文件**: docs/ 目錄
 - **CLAUDE.md**: 開發者指南與架構說明
 

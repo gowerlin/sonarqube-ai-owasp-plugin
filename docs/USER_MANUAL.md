@@ -99,7 +99,7 @@ SonarQube AI OWASP Security Plugin 是一款結合 AI 技術與 OWASP 安全規�
 
 1. **下載外掛程式**
    ```bash
-   wget https://github.com/your-org/sonarqube-ai-owasp-plugin/releases/download/v1.0.0/sonarqube-ai-owasp-plugin-1.0.0.jar
+   wget https://github.com/gowerlin/sonarqube-ai-owasp-plugin/releases/download/v1.0.0/sonarqube-ai-owasp-plugin-1.0.0.jar
    ```
 
 2. **部署 JAR 檔案**
@@ -729,12 +729,10 @@ A: 可以在 SonarQube UI 中：
 
 ### 回報問題
 
-- **GitHub Issues**: https://github.com/your-org/sonarqube-ai-owasp-plugin/issues
-- **Email**: support@your-org.com
+- **GitHub Issues**: https://github.com/gowerlin/sonarqube-ai-owasp-plugin/issues
 
 ### 社群
 
-- **Slack**: #ai-owasp-plugin
 - **論壇**: https://community.sonarsource.com/
 
 ---

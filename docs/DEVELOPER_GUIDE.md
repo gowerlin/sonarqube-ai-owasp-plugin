@@ -90,7 +90,7 @@ docker run -d --name sonarqube -p 9000:9000 sonarqube:10-community
 
 ```bash
 # Clone 專案
-git clone https://github.com/your-org/sonarqube-ai-owasp-plugin
+git clone https://github.com/gowerlin/sonarqube-ai-owasp-plugin
 cd sonarqube-ai-owasp-plugin
 
 # 編譯
@@ -401,6 +401,5 @@ MIT License - 詳見 LICENSE 檔案
 
 ## 聯絡方式
 
-- **Issues**: https://github.com/your-org/sonarqube-ai-owasp-plugin/issues
-- **Email**: dev@your-org.com
-- **Slack**: #plugin-dev
+- **GitHub Issues**: https://github.com/gowerlin/sonarqube-ai-owasp-plugin/issues
+- **GitHub**: https://github.com/gowerlin

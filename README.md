@@ -1,6 +1,6 @@
 # SonarQube AI OWASP Security Plugin
 
-[![CI Build & Test](https://github.com/your-org/sonarqube-ai-owasp-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/sonarqube-ai-owasp-plugin/actions/workflows/ci.yml)
+[![CI Build & Test](https://github.com/gowerlin/sonarqube-ai-owasp-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/gowerlin/sonarqube-ai-owasp-plugin/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![SonarQube Version](https://img.shields.io/badge/SonarQube-9.9%2B-blue)](https://www.sonarqube.org/)
 [![Java Version](https://img.shields.io/badge/Java-17%2B-orange)](https://adoptium.net/)
@@ -134,7 +134,7 @@
 #### 方法一：從 GitHub Releases 下載
 ```bash
 # 1. 下載最新版本
-wget https://github.com/your-org/sonarqube-ai-owasp-plugin/releases/latest/download/sonar-aiowasp-plugin-1.0.0.jar
+wget https://github.com/gowerlin/sonarqube-ai-owasp-plugin/releases/latest/download/sonar-aiowasp-plugin-1.0.0.jar
 
 # 2. 複製至 SonarQube 插件目錄
 cp sonar-aiowasp-plugin-1.0.0.jar $SONARQUBE_HOME/extensions/plugins/
@@ -146,7 +146,7 @@ $SONARQUBE_HOME/bin/linux-x86-64/sonar.sh restart
 #### 方法二：從原始碼建構
 ```bash
 # 1. Clone 專案
-git clone https://github.com/your-org/sonarqube-ai-owasp-plugin.git
+git clone https://github.com/gowerlin/sonarqube-ai-owasp-plugin.git
 cd sonarqube-ai-owasp-plugin
 
 # 2. 編譯與打包
@@ -431,7 +431,7 @@ mvn jacoco:report
 我們歡迎任何形式的貢獻！請參閱 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ### 報告問題
-- 前往 [GitHub Issues](https://github.com/your-org/sonarqube-ai-owasp-plugin/issues)
+- 前往 [GitHub Issues](https://github.com/gowerlin/sonarqube-ai-owasp-plugin/issues)
 - 提供詳細的重現步驟
 - 附上錯誤訊息和日誌
 
@@ -524,9 +524,9 @@ PdfReportConfig config = PdfReportConfig.builder()
 
 ## 📞 聯絡方式
 
-- **專案主頁**: https://github.com/your-org/sonarqube-ai-owasp-plugin
-- **問題追蹤**: https://github.com/your-org/sonarqube-ai-owasp-plugin/issues
-- **Email**: dev@your-org.com
+- **專案主頁**: https://github.com/gowerlin/sonarqube-ai-owasp-plugin
+- **問題追蹤**: https://github.com/gowerlin/sonarqube-ai-owasp-plugin/issues
+- **GitHub**: https://github.com/gowerlin
 
 ---
 

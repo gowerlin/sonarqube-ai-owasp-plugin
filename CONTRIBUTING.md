@@ -7,7 +7,7 @@
 ## 🌟 貢獻方式
 
 ### 報告問題（Bug Reports）
-1. 檢查 [GitHub Issues](https://github.com/your-org/sonarqube-ai-owasp-plugin/issues) 確認問題未被報告
+1. 檢查 [GitHub Issues](https://github.com/gowerlin/sonarqube-ai-owasp-plugin/issues) 確認問題未被報告
 2. 建立新 Issue，包含：
    - **問題描述**：清晰簡潔的說明
    - **重現步驟**：詳細的操作步驟
@@ -174,7 +174,7 @@ open target/site/jacoco/index.html
 ### 使用 Docker（推薦）
 ```bash
 # 1. Clone 專案
-git clone https://github.com/your-org/sonarqube-ai-owasp-plugin.git
+git clone https://github.com/gowerlin/sonarqube-ai-owasp-plugin.git
 cd sonarqube-ai-owasp-plugin
 
 # 2. 啟動開發環境
@@ -202,7 +202,7 @@ java -version  # 確認版本
 mvn -version  # 確認版本
 
 # 3. Clone 專案
-git clone https://github.com/your-org/sonarqube-ai-owasp-plugin.git
+git clone https://github.com/gowerlin/sonarqube-ai-owasp-plugin.git
 cd sonarqube-ai-owasp-plugin
 
 # 4. 編譯專案
@@ -276,9 +276,8 @@ Pull Request 將經過以下審查：
 
 ## 📞 聯絡方式
 
-- **問題討論**: [GitHub Discussions](https://github.com/your-org/sonarqube-ai-owasp-plugin/discussions)
-- **即時聊天**: [Discord](#) 或 [Slack](#)
-- **Email**: dev@your-org.com
+- **問題討論**: [GitHub Discussions](https://github.com/gowerlin/sonarqube-ai-owasp-plugin/discussions)
+- **GitHub**: https://github.com/gowerlin
 
 ---
 

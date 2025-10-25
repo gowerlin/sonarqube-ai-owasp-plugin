@@ -657,9 +657,9 @@ X-RateLimit-Reset: 1634567890
 
 ## 支援
 
-- **GitHub Issues**: https://github.com/your-org/sonarqube-ai-owasp-plugin/issues
-- **Email**: api-support@your-org.com
-- **文件**: https://docs.your-org.com/sonarqube-ai-owasp
+- **GitHub Issues**: https://github.com/gowerlin/sonarqube-ai-owasp-plugin/issues
+- **GitHub**: https://github.com/gowerlin
+- **專案主頁**: https://github.com/gowerlin/sonarqube-ai-owasp-plugin
 
 ---
 
