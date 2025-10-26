@@ -99,6 +99,20 @@ const severityLabels = {
 
 // ==================== 工具函數 ====================
 
+/**
+ * 在 OWASP 專屬容器中查找元素
+ * @param {string} elementId - 元素 ID
+ * @returns {Element|null} - 找到的元素或 null
+ */
+function getOwaspElement(elementId) {
+    const owaspContainer = document.getElementById('aiowasp-report-container');
+    if (owaspContainer) {
+        return owaspContainer.querySelector('#' + elementId);
+    }
+    // 備用：全域查找
+    return document.getElementById(elementId);
+}
+
 // Escape HTML to prevent XSS
 function escapeHtml(text) {
     if (!text) return '';
@@ -207,8 +221,11 @@ function parseFindings(data) {
 
 // Populate file filter dropdown
 function populateFileFilter() {
-    const fileFilter = document.getElementById('fileFilter');
-    if (!fileFilter) return;
+    const fileFilter = getOwaspElement('fileFilter');
+    if (!fileFilter) {
+        console.warn('[OWASP Report] populateFileFilter: fileFilter element not found');
+        return;
+    }
 
     const uniqueFiles = [...new Set(allFindings.map(f => f.filePath))].sort();
     fileFilter.innerHTML = '<option value="">所有檔案</option>';
@@ -306,8 +323,11 @@ function updateSummaryStats() {
 
 // Render findings list
 function renderFindings() {
-    const findingsList = document.getElementById('findingsList');
-    if (!findingsList) return;
+    const findingsList = getOwaspElement('findingsList');
+    if (!findingsList) {
+        console.warn('[OWASP Report] renderFindings: findingsList element not found');
+        return;
+    }
 
     if (filteredFindings.length === 0) {
         findingsList.innerHTML = '<div class="empty-state">沒有符合篩選條件的發現</div>';
@@ -661,9 +681,11 @@ function formatAiSuggestion(data) {
 
 // Show loading state
 function showLoading() {
-    const findingsList = document.getElementById('findingsList');
+    const findingsList = getOwaspElement('findingsList');
     if (findingsList) {
-        findingsList.innerHTML = '<div class="loading">正在載入報告資料...</div>';
+        findingsList.innerHTML = '<div class="loading">⏳ 正在載入報告資料...</div>';
+    } else {
+        console.warn('[OWASP Report] showLoading: findingsList element not found');
     }
 }
 
@@ -767,11 +789,11 @@ function cleanupOwaspReportGlobal() {
         container.remove();
     });
 
-    // 重置全域變數
-    allFindings = [];
-    filteredFindings = [];
-    currentOwaspVersion = '2021';
-    projectKey = 'unknown';
+    // ⚠️ 不要在這裡重置全域變數！
+    // 原因：URL 監聽器可能在新頁面載入「之後」才觸發，
+    // 會把已經載入的數據清空。
+    // 全域變數應該由 registerExtension 函數在載入時重置。
+    console.log('[OWASP Report] Containers removed, variables will be reset on next load');
 }
 
 // 監聽 URL 變化，當離開 OWASP Report 頁面時自動清理
@@ -810,10 +832,9 @@ window.registerExtension('aiowasp/report', function (options) {
     }
     console.log('[OWASP Report] Parent container cleared');
 
-    // 重置全域變數
-    allFindings = [];
-    filteredFindings = [];
-    currentOwaspVersion = '2021';
+    // ⚠️ 不要在這裡重置全域變數！
+    // 原因：loadReportData() 會重新載入數據並覆蓋，
+    // 過早重置會導致數據載入前就被清空。
 
     // 創建專屬的子容器，避免與其他 extension 衝突
     const container = document.createElement('div');
@@ -900,13 +921,26 @@ window.registerExtension('aiowasp/report', function (options) {
 
             // 不再嘗試執行內嵌 script - 已移除 CSP 違規代碼
 
-            // 設置事件監聽器和初始化
+            // 設置事件監聽器和初始化（增加延遲確保 DOM 完全載入）
             setTimeout(() => {
                 console.log('[OWASP Report] Setting up event listeners and initializing...');
+
+                // 檢查關鍵元素是否存在
+                const findingsList = container.querySelector('#findingsList');
+                if (!findingsList) {
+                    console.error('[OWASP Report] Critical element #findingsList not found! Retrying...');
+                    // 再等待一段時間後重試
+                    setTimeout(() => {
+                        setupEventListeners(container);
+                        initReport();
+                    }, 200);
+                    return;
+                }
+
                 setupEventListeners(container);
                 initReport();
                 console.log('[OWASP Report] Initialization complete');
-            }, 100);
+            }, 300); // 增加到 300ms 確保 DOM 完全載入
 
             console.log('[OWASP Report] Report displayed successfully');
         })
