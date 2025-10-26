@@ -758,6 +758,39 @@ function setupEventListeners(container) {
 
 // ==================== SonarQube Extension 註冊 ====================
 
+// 全域清理函數：當離開 OWASP Report 頁面時清理殘留內容
+function cleanupOwaspReportGlobal() {
+    // 查找並移除所有 OWASP Report 專屬容器
+    const owaspContainers = document.querySelectorAll('[data-extension="aiowasp-report"]');
+    owaspContainers.forEach(container => {
+        console.log('[OWASP Report] Global cleanup: removing container', container.id);
+        container.remove();
+    });
+
+    // 重置全域變數
+    allFindings = [];
+    filteredFindings = [];
+    currentOwaspVersion = '2021';
+    projectKey = 'unknown';
+}
+
+// 監聽 URL 變化，當離開 OWASP Report 頁面時自動清理
+let lastUrl = location.href;
+new MutationObserver(() => {
+    const currentUrl = location.href;
+    if (currentUrl !== lastUrl) {
+        console.log('[OWASP Report] URL changed from', lastUrl, 'to', currentUrl);
+
+        // 如果從 OWASP Report 頁面離開
+        if (lastUrl.includes('/aiowasp/report') && !currentUrl.includes('/aiowasp/report')) {
+            console.log('[OWASP Report] Leaving OWASP Report page, triggering cleanup');
+            cleanupOwaspReportGlobal();
+        }
+
+        lastUrl = currentUrl;
+    }
+}).observe(document, {subtree: true, childList: true});
+
 window.registerExtension('aiowasp/report', function (options) {
     console.log('[OWASP Report] Extension starting...', options);
 
@@ -768,16 +801,41 @@ window.registerExtension('aiowasp/report', function (options) {
     console.log('[OWASP Report] Project:', projectKey, 'Branch:', branch);
 
     // 使用 SonarQube 提供的容器元素
-    const container = options.el;
-    console.log('[OWASP Report] Using provided container:', container);
+    const parentContainer = options.el;
+    console.log('[OWASP Report] Parent container:', parentContainer.tagName, 'Children:', parentContainer.children.length);
+
+    // ⚠️ 關鍵修正：徹底清空父容器（移除所有非 OWASP 的內容）
+    while (parentContainer.firstChild) {
+        parentContainer.removeChild(parentContainer.firstChild);
+    }
+    console.log('[OWASP Report] Parent container cleared');
+
+    // 重置全域變數
+    allFindings = [];
+    filteredFindings = [];
+    currentOwaspVersion = '2021';
+
+    // 創建專屬的子容器，避免與其他 extension 衝突
+    const container = document.createElement('div');
+    container.id = 'aiowasp-report-container';
+    container.className = 'aiowasp-report-wrapper';
+    container.setAttribute('data-extension', 'aiowasp-report');
+    container.setAttribute('data-timestamp', Date.now());
 
     // 設置容器樣式
     container.style.width = '100%';
-    container.style.height = '100vh';
+    container.style.minHeight = '100vh';
     container.style.overflow = 'auto';
     container.style.margin = '0';
     container.style.padding = '0';
+
+    // 設置載入訊息
     container.innerHTML = '<div style="padding: 20px; text-align: center;">Loading OWASP Report...</div>';
+
+    // 將專屬容器附加到父容器
+    parentContainer.appendChild(container);
+
+    console.log('[OWASP Report] Created dedicated container:', container.id);
 
     // 載入報告 HTML 內容
     const reportUrl = `/static/aiowasp/report.html?project=${encodeURIComponent(projectKey)}&branch=${encodeURIComponent(branch)}`;
@@ -799,8 +857,12 @@ window.registerExtension('aiowasp/report', function (options) {
             const doc = parser.parseFromString(html, 'text/html');
             console.log('[OWASP Report] HTML parsed successfully');
 
-            // 清空容器
+            // ⚠️ 關鍵：再次徹底清空容器（防止 async 競爭條件）
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
             container.innerHTML = '';
+            console.log('[OWASP Report] Container re-cleared before rendering, children:', container.children.length);
 
             // 動態載入 Highlight.js CSS (本地資源)
             if (!document.querySelector('link[href*="highlight.js"]')) {
@@ -830,12 +892,11 @@ window.registerExtension('aiowasp/report', function (options) {
             const bodyContent = doc.body.innerHTML;
             console.log('[OWASP Report] Body content length:', bodyContent.length);
 
-            // 創建內容容器
+            // 創建內容容器並設置唯一 ID 以便調試
             const contentDiv = document.createElement('div');
+            contentDiv.id = 'owasp-report-content-' + Date.now();
             contentDiv.innerHTML = bodyContent;
             container.appendChild(contentDiv);
-
-            console.log('[OWASP Report] Content div appended, children count:', contentDiv.children.length);
 
             // 不再嘗試執行內嵌 script - 已移除 CSP 違規代碼
 
@@ -860,8 +921,8 @@ window.registerExtension('aiowasp/report', function (options) {
             `;
         });
 
-    console.log('[OWASP Report] Returning container element');
+    console.log('[OWASP Report] Returning parent container element');
 
-    // 返回容器元素
-    return container;
+    // 返回父容器元素（SonarQube 會管理生命週期）
+    return parentContainer;
 });
