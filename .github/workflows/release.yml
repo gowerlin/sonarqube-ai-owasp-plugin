@@ -36,7 +36,7 @@ jobs:
           mvn versions:commit -B
 
       - name: Build and Package
-        run: mvn clean package -DskipTests -B
+        run: mvn clean package -Dmaven.test.skip=true -B
 
       - name: Run Tests
         run: mvn test -B || echo "⚠️ Tests have failures, continuing for release"
