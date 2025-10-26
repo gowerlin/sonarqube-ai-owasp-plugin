@@ -165,6 +165,8 @@ public class AiConfig {
                     this.apiEndpoint = "https://api.openai.com/v1/chat/completions";
                 } else if (model.isClaude()) {
                     this.apiEndpoint = "https://api.anthropic.com/v1/messages";
+                } else if (model.isGemini()) {
+                    this.apiEndpoint = "https://generativelanguage.googleapis.com/v1/models";
                 }
             }
             return this;
@@ -236,6 +238,15 @@ public class AiConfig {
         }
 
         public AiConfig build() {
+            // 智能推斷執行模式（如果未明確設置）
+            if (executionMode == null) {
+                if (cliPath != null && !cliPath.trim().isEmpty()) {
+                    executionMode = AiExecutionMode.CLI;
+                } else {
+                    executionMode = AiExecutionMode.API;
+                }
+            }
+
             AiConfig config = new AiConfig(this);
             if (!config.isValid()) {
                 throw new IllegalStateException("Invalid AI configuration");
