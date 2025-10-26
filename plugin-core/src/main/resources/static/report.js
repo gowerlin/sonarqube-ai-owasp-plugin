@@ -1,11 +1,15 @@
 // SonarQube Page Extension: OWASP Security Report
 // 直接載入 HTML 內容而非使用 iframe
 
-// ==================== 全域變數 ====================
-let allFindings = [];
-let filteredFindings = [];
-let currentOwaspVersion = '2021';
-let projectKey = 'unknown';
+// ==================== OWASP Report 命名空間（避免與其他插件衝突）====================
+(function() {
+    'use strict';
+
+    // ==================== 全域變數（命名空間內部）====================
+    let allFindings = [];
+    let filteredFindings = [];
+    let currentOwaspVersion = '2021';
+    let projectKey = 'unknown';
 
 // ==================== 語法高亮輔助函數 ====================
 /**
@@ -176,10 +180,19 @@ function downloadReport(format) {
 
 // Initialize page
 async function initReport() {
+    console.log('[OWASP Report] initReport: Starting initialization...');
     showLoading();
+
     await loadReportData();
+    console.log('[OWASP Report] initReport: Data loaded, allFindings count:', allFindings.length);
+
+    // 先填充檔案路徑下拉選單（會重建 HTML）
     populateFileFilter();
-    applyFilters();
+
+    // 再重置篩選器為預設值並自動套用（顯示所有資料）
+    resetFilters();
+
+    console.log('[OWASP Report] initReport: Initialization complete, displaying', filteredFindings.length, 'findings');
 }
 
 // Load report data from API
@@ -240,10 +253,18 @@ function populateFileFilter() {
 
 // Apply filters
 function applyFilters() {
-    const severityFilter = document.getElementById('severityFilter')?.value || '';
-    const owaspFilter = document.getElementById('owaspFilter')?.value || '';
-    const fileFilter = document.getElementById('fileFilter')?.value || '';
-    const searchText = document.getElementById('searchBox')?.value.toLowerCase() || '';
+    const severityFilter = getOwaspElement('severityFilter')?.value || '';
+    const owaspFilter = getOwaspElement('owaspFilter')?.value || '';
+    const fileFilter = getOwaspElement('fileFilter')?.value || '';
+    const searchText = getOwaspElement('searchBox')?.value.toLowerCase() || '';
+
+    console.log('[OWASP Report] applyFilters: Applying filters...', {
+        severity: severityFilter || 'all',
+        owasp: owaspFilter || 'all',
+        file: fileFilter || 'all',
+        search: searchText || 'none',
+        totalFindings: allFindings.length
+    });
 
     filteredFindings = allFindings.filter(finding => {
         if (severityFilter && finding.severity !== severityFilter) return false;
@@ -264,16 +285,25 @@ function applyFilters() {
         return true;
     });
 
+    console.log('[OWASP Report] applyFilters: Filtered', filteredFindings.length, 'findings from', allFindings.length, 'total');
+
     updateSummaryStats();
     renderFindings();
 }
 
 // Reset filters
 function resetFilters() {
-    if (document.getElementById('severityFilter')) document.getElementById('severityFilter').value = '';
-    if (document.getElementById('owaspFilter')) document.getElementById('owaspFilter').value = '';
-    if (document.getElementById('fileFilter')) document.getElementById('fileFilter').value = '';
-    if (document.getElementById('searchBox')) document.getElementById('searchBox').value = '';
+    const severityFilter = getOwaspElement('severityFilter');
+    const owaspFilter = getOwaspElement('owaspFilter');
+    const fileFilter = getOwaspElement('fileFilter');
+    const searchBox = getOwaspElement('searchBox');
+
+    if (severityFilter) severityFilter.value = '';
+    if (owaspFilter) owaspFilter.value = '';
+    if (fileFilter) fileFilter.value = '';
+    if (searchBox) searchBox.value = '';
+
+    console.log('[OWASP Report] Filters reset to default (show all)');
     applyFilters();
 }
 
@@ -304,12 +334,12 @@ function updateSummaryStats() {
         }
     });
 
-    const criticalCount = document.getElementById('criticalCount');
-    const highCount = document.getElementById('highCount');
-    const mediumCount = document.getElementById('mediumCount');
-    const lowCount = document.getElementById('lowCount');
-    const infoCount = document.getElementById('infoCount');
-    const findingsCount = document.getElementById('findingsCount');
+    const criticalCount = getOwaspElement('criticalCount');
+    const highCount = getOwaspElement('highCount');
+    const mediumCount = getOwaspElement('mediumCount');
+    const lowCount = getOwaspElement('lowCount');
+    const infoCount = getOwaspElement('infoCount');
+    const findingsCount = getOwaspElement('findingsCount');
 
     if (criticalCount) criticalCount.textContent = stats.CRITICAL;
     if (highCount) highCount.textContent = stats.HIGH;
@@ -960,3 +990,5 @@ window.registerExtension('aiowasp/report', function (options) {
     // 返回父容器元素（SonarQube 會管理生命週期）
     return parentContainer;
 });
+
+})(); // 結束 IIFE 命名空間，避免與其他插件的函數名稱衝突
