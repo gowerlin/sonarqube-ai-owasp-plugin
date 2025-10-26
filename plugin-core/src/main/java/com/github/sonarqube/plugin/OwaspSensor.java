@@ -104,6 +104,19 @@ public class OwaspSensor implements Sensor {
         LOG.info("AI 配置: provider={}, model={}, endpoint={}, timeout={}s",
             provider, modelId, apiEndpoint, timeout);
 
+        // 讀取 Rate Limiting 配置（優先從 SonarQube 配置讀取，若無則使用 PluginConfiguration 預設值）
+        boolean rateLimitEnabled = sonarConfig.getBoolean(AiOwaspPlugin.PROPERTY_AI_RATE_LIMIT_ENABLED)
+            .orElse(pluginConfig.isAiRateLimitEnabled());
+        int maxTokensPerMinute = sonarConfig.getInt(AiOwaspPlugin.PROPERTY_AI_MAX_TOKENS_PER_MINUTE)
+            .orElse(pluginConfig.getAiMaxTokensPerMinute());
+        double bufferRatio = sonarConfig.getDouble(AiOwaspPlugin.PROPERTY_AI_RATE_LIMIT_BUFFER_RATIO)
+            .orElse(pluginConfig.getAiRateLimitBufferRatio());
+        String rateLimitStrategy = sonarConfig.get(AiOwaspPlugin.PROPERTY_AI_RATE_LIMIT_STRATEGY)
+            .orElse(pluginConfig.getAiRateLimitStrategy());
+
+        LOG.info("Rate Limiting: enabled={}, TPM={}, buffer={}, strategy={}",
+            rateLimitEnabled, maxTokensPerMinute, bufferRatio, rateLimitStrategy);
+
         return AiConfig.builder()
             .model(model)
             .apiKey(apiKey)
@@ -114,6 +127,10 @@ public class OwaspSensor implements Sensor {
             .maxRetries(3)
             .retryDelayMs(1000L)
             .executionMode(AiExecutionMode.API)
+            .rateLimitEnabled(rateLimitEnabled)
+            .maxTokensPerMinute(maxTokensPerMinute)
+            .rateLimitBufferRatio(bufferRatio)
+            .rateLimitStrategy(rateLimitStrategy)
             .build();
     }
 

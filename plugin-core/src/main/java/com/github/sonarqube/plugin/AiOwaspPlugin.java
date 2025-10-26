@@ -51,6 +51,12 @@ public class AiOwaspPlugin implements Plugin {
     public static final String PROPERTY_AI_TIMEOUT = "sonar.aiowasp.ai.timeout";
     public static final String PROPERTY_AI_RESPONSE_LANGUAGE = "sonar.aiowasp.ai.responseLanguage";
 
+    // Rate Limiting 配置
+    public static final String PROPERTY_AI_RATE_LIMIT_ENABLED = "sonar.aiowasp.ai.rateLimit.enabled";
+    public static final String PROPERTY_AI_MAX_TOKENS_PER_MINUTE = "sonar.aiowasp.ai.rateLimit.maxTokensPerMinute";
+    public static final String PROPERTY_AI_RATE_LIMIT_BUFFER_RATIO = "sonar.aiowasp.ai.rateLimit.bufferRatio";
+    public static final String PROPERTY_AI_RATE_LIMIT_STRATEGY = "sonar.aiowasp.ai.rateLimit.strategy";
+
     // CLI 模式配置 (Epic 9)
     public static final String PROPERTY_CLI_GEMINI_PATH = "sonar.aiowasp.cli.gemini.path";
     public static final String PROPERTY_CLI_COPILOT_PATH = "sonar.aiowasp.cli.copilot.path";
@@ -265,6 +271,58 @@ public class AiOwaspPlugin implements Plugin {
         );
 
         // ============================================================
+        // Rate Limiting 配置
+        // ============================================================
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_AI_RATE_LIMIT_ENABLED)
+                .name("Enable Rate Limiting")
+                .description("啟用 TPM (Tokens Per Minute) 速率限制，防止超過 API 限制")
+                .category(CATEGORY_AI)
+                .subCategory("Rate Limiting")
+                .defaultValue("true")
+                .type(PropertyType.BOOLEAN)
+                .index(11)
+                .build()
+        );
+
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_AI_MAX_TOKENS_PER_MINUTE)
+                .name("Max Tokens Per Minute")
+                .description("每分鐘最大 token 數量（TPM 限制）。OpenAI 免費層：30000，付費層：60000-90000")
+                .category(CATEGORY_AI)
+                .subCategory("Rate Limiting")
+                .defaultValue("30000")
+                .type(PropertyType.INTEGER)
+                .index(12)
+                .build()
+        );
+
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_AI_RATE_LIMIT_BUFFER_RATIO)
+                .name("Rate Limit Buffer Ratio")
+                .description("緩衝比例（0.0-1.0）。例如 0.9 表示使用 90% 的限制，保留 10% 緩衝")
+                .category(CATEGORY_AI)
+                .subCategory("Rate Limiting")
+                .defaultValue("0.9")
+                .type(PropertyType.FLOAT)
+                .index(13)
+                .build()
+        );
+
+        context.addExtension(
+            PropertyDefinition.builder(PROPERTY_AI_RATE_LIMIT_STRATEGY)
+                .name("Rate Limit Strategy")
+                .description("速率限制策略。adaptive：自動調整等待時間；fixed：使用固定延遲")
+                .category(CATEGORY_AI)
+                .subCategory("Rate Limiting")
+                .defaultValue("adaptive")
+                .options("adaptive", "fixed")
+                .type(PropertyType.SINGLE_SELECT_LIST)
+                .index(14)
+                .build()
+        );
+
+        // ============================================================
         // CLI 模式配置 (Epic 9)
         // ============================================================
         context.addExtension(
@@ -401,7 +459,7 @@ public class AiOwaspPlugin implements Plugin {
                 .build()
         );
 
-        LOG.debug("已註冊 {} 個配置屬性", 17);
+        LOG.debug("已註冊 {} 個配置屬性", 21); // 新增 4 個 Rate Limiting 屬性
     }
 
     /**

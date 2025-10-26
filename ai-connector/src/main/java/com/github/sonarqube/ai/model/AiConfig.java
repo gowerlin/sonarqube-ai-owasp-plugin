@@ -23,6 +23,12 @@ public class AiConfig {
     private final String cliPath;
     private final AiExecutionMode executionMode;
 
+    // Rate Limiting 配置
+    private final boolean rateLimitEnabled;
+    private final int maxTokensPerMinute;
+    private final double rateLimitBufferRatio;
+    private final String rateLimitStrategy;
+
     private AiConfig(Builder builder) {
         this.model = builder.model;
         this.apiKey = builder.apiKey;
@@ -34,6 +40,10 @@ public class AiConfig {
         this.retryDelayMs = builder.retryDelayMs;
         this.cliPath = builder.cliPath;
         this.executionMode = builder.executionMode;
+        this.rateLimitEnabled = builder.rateLimitEnabled;
+        this.maxTokensPerMinute = builder.maxTokensPerMinute;
+        this.rateLimitBufferRatio = builder.rateLimitBufferRatio;
+        this.rateLimitStrategy = builder.rateLimitStrategy;
     }
 
     public AiModel getModel() {
@@ -74,6 +84,22 @@ public class AiConfig {
 
     public AiExecutionMode getExecutionMode() {
         return executionMode != null ? executionMode : AiExecutionMode.API;
+    }
+
+    public boolean isRateLimitEnabled() {
+        return rateLimitEnabled;
+    }
+
+    public int getMaxTokensPerMinute() {
+        return maxTokensPerMinute;
+    }
+
+    public double getRateLimitBufferRatio() {
+        return rateLimitBufferRatio;
+    }
+
+    public String getRateLimitStrategy() {
+        return rateLimitStrategy;
     }
 
     /**
@@ -124,6 +150,12 @@ public class AiConfig {
         private long retryDelayMs = 1000; // 預設延遲 1 秒
         private String cliPath; // CLI 工具路徑 (Epic 9)
         private AiExecutionMode executionMode; // 執行模式 (Epic 9)
+
+        // Rate Limiting 配置
+        private boolean rateLimitEnabled = true; // 預設啟用
+        private int maxTokensPerMinute = 30000; // OpenAI 預設 TPM
+        private double rateLimitBufferRatio = 0.9; // 使用 90% 限制
+        private String rateLimitStrategy = "adaptive"; // adaptive 或 fixed
 
         public Builder model(AiModel model) {
             this.model = model;
@@ -180,6 +212,26 @@ public class AiConfig {
 
         public Builder executionMode(AiExecutionMode executionMode) {
             this.executionMode = executionMode;
+            return this;
+        }
+
+        public Builder rateLimitEnabled(boolean rateLimitEnabled) {
+            this.rateLimitEnabled = rateLimitEnabled;
+            return this;
+        }
+
+        public Builder maxTokensPerMinute(int maxTokensPerMinute) {
+            this.maxTokensPerMinute = maxTokensPerMinute;
+            return this;
+        }
+
+        public Builder rateLimitBufferRatio(double rateLimitBufferRatio) {
+            this.rateLimitBufferRatio = rateLimitBufferRatio;
+            return this;
+        }
+
+        public Builder rateLimitStrategy(String rateLimitStrategy) {
+            this.rateLimitStrategy = rateLimitStrategy;
             return this;
         }
 

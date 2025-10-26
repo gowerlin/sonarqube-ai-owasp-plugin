@@ -12,12 +12,15 @@ import com.github.sonarqube.ai.model.PromptTemplate;
 import com.github.sonarqube.ai.model.SecurityIssue;
 import com.github.sonarqube.ai.provider.openai.OpenAiApiRequest;
 import com.github.sonarqube.ai.provider.openai.OpenAiApiResponse;
+import com.github.sonarqube.ai.ratelimit.TokenBucketRateLimiter;
 import okhttp3.*;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * OpenAI 服務實現
@@ -33,11 +36,19 @@ public class OpenAiService implements AiService {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
+    // 正則表達式：解析 Rate Limit 錯誤訊息中的等待時間
+    // 範例: "Please try again in 562ms" 或 "Please try again in 1.5s"
+    private static final Pattern RETRY_AFTER_PATTERN = Pattern.compile(
+        "Please try again in (\\d+(?:\\.\\d+)?)(ms|s)",
+        Pattern.CASE_INSENSITIVE
+    );
+
     private final AiConfig config;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final AiCacheManager cacheManager;
     private final AiResponseParser responseParser;
+    private final TokenBucketRateLimiter rateLimiter; // TPM Rate Limiter
 
     public OpenAiService(AiConfig config) {
         this(config, null);
@@ -55,6 +66,16 @@ public class OpenAiService implements AiService {
         this.httpClient = createHttpClient();
         this.cacheManager = cacheManager;
         this.responseParser = new AiResponseParser();
+
+        // 初始化 Rate Limiter（如果啟用）
+        if (config.isRateLimitEnabled()) {
+            this.rateLimiter = new TokenBucketRateLimiter(
+                config.getMaxTokensPerMinute(),
+                config.getRateLimitBufferRatio()
+            );
+        } else {
+            this.rateLimiter = null;
+        }
     }
 
     /**
@@ -153,15 +174,78 @@ public class OpenAiService implements AiService {
     }
 
     /**
-     * 執行 HTTP 請求（帶重試機制）
+     * 執行 HTTP 請求（帶重試機制 + Rate Limiting）
      */
     private OpenAiApiResponse executeWithRetry(String requestJson) throws IOException, AiException {
         int attempts = 0;
         Exception lastException = null;
 
         while (attempts < config.getMaxRetries()) {
+            // Rate Limiting 檢查（如果啟用）
+            if (rateLimiter != null) {
+                int estimatedTokens = config.getMaxTokens(); // 使用配置的最大 token 數作為預估
+                long waitTime = rateLimiter.getRecommendedWaitTime(estimatedTokens);
+
+                if (waitTime > 0) {
+                    try {
+                        Thread.sleep(waitTime);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new AiException(
+                            "Rate limiting wait interrupted",
+                            ie,
+                            AiException.ErrorType.UNKNOWN_ERROR,
+                            getProviderName()
+                        );
+                    }
+                }
+
+                // 嘗試獲取 token（非阻塞）
+                if (!rateLimiter.tryAcquire(estimatedTokens)) {
+                    // 等待一段時間後重試
+                    try {
+                        Thread.sleep(1000);
+                        attempts++;
+                        continue;
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new AiException(
+                            "Rate limiting retry interrupted",
+                            ie,
+                            AiException.ErrorType.UNKNOWN_ERROR,
+                            getProviderName()
+                        );
+                    }
+                }
+            }
+
             try {
-                return executeRequest(requestJson);
+                OpenAiApiResponse response = executeRequest(requestJson);
+
+                // 檢查是否為 Rate Limit 錯誤
+                if (response.hasError() && isRateLimitError(response.getError())) {
+                    long retryAfterMs = parseRetryAfter(response.getError().getMessage());
+
+                    if (retryAfterMs > 0 && attempts < config.getMaxRetries() - 1) {
+                        // 使用 API 建議的等待時間
+                        try {
+                            Thread.sleep(retryAfterMs);
+                            attempts++;
+                            continue; // 重試
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw new AiException(
+                                "Rate limit retry interrupted",
+                                ie,
+                                AiException.ErrorType.UNKNOWN_ERROR,
+                                getProviderName()
+                            );
+                        }
+                    }
+                }
+
+                return response;
+
             } catch (IOException e) {
                 lastException = e;
                 attempts++;
@@ -188,6 +272,51 @@ public class OpenAiService implements AiService {
             AiException.ErrorType.NETWORK_ERROR,
             getProviderName()
         );
+    }
+
+    /**
+     * 檢查錯誤是否為 Rate Limit 錯誤
+     */
+    private boolean isRateLimitError(OpenAiApiResponse.Error error) {
+        if (error == null || error.getMessage() == null) {
+            return false;
+        }
+        String message = error.getMessage().toLowerCase();
+        return message.contains("rate limit") || message.contains("too many requests");
+    }
+
+    /**
+     * 解析 API 錯誤訊息中的等待時間
+     *
+     * 範例訊息：
+     * "Rate limit reached for gpt-4-turbo-preview... Please try again in 562ms."
+     * "Rate limit reached... Please try again in 1.5s."
+     *
+     * @param errorMessage 錯誤訊息
+     * @return 等待時間（毫秒），如果無法解析則返回 0
+     */
+    private long parseRetryAfter(String errorMessage) {
+        if (errorMessage == null || errorMessage.isEmpty()) {
+            return 0;
+        }
+
+        Matcher matcher = RETRY_AFTER_PATTERN.matcher(errorMessage);
+        if (matcher.find()) {
+            try {
+                double value = Double.parseDouble(matcher.group(1));
+                String unit = matcher.group(2).toLowerCase();
+
+                if ("ms".equals(unit)) {
+                    return (long) value;
+                } else if ("s".equals(unit)) {
+                    return (long) (value * 1000);
+                }
+            } catch (NumberFormatException e) {
+                // 無法解析，返回 0
+            }
+        }
+
+        return 0; // 無法解析，使用預設重試延遲
     }
 
     /**

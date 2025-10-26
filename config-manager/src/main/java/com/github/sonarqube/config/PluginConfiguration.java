@@ -20,6 +20,12 @@ public class PluginConfiguration {
     private String aiModel = "gpt-4";
     private int aiTimeout = 30000; // 30 秒
 
+    // AI Rate Limiting 配置 (TPM - Tokens Per Minute)
+    private boolean aiRateLimitEnabled = true; // 預設啟用 Rate Limiting
+    private int aiMaxTokensPerMinute = 30000; // OpenAI 預設 TPM 限制
+    private double aiRateLimitBufferRatio = 0.9; // 使用 90% 的限制，保留 10% 緩衝
+    private String aiRateLimitStrategy = "adaptive"; // adaptive 或 fixed
+
     // 快取配置
     private boolean cacheEnabled = true;
     private long cacheMaxSize = 1000L;
@@ -139,6 +145,38 @@ public class PluginConfiguration {
         this.enabledLanguages = enabledLanguages;
     }
 
+    public boolean isAiRateLimitEnabled() {
+        return aiRateLimitEnabled;
+    }
+
+    public void setAiRateLimitEnabled(boolean aiRateLimitEnabled) {
+        this.aiRateLimitEnabled = aiRateLimitEnabled;
+    }
+
+    public int getAiMaxTokensPerMinute() {
+        return aiMaxTokensPerMinute;
+    }
+
+    public void setAiMaxTokensPerMinute(int aiMaxTokensPerMinute) {
+        this.aiMaxTokensPerMinute = aiMaxTokensPerMinute;
+    }
+
+    public double getAiRateLimitBufferRatio() {
+        return aiRateLimitBufferRatio;
+    }
+
+    public void setAiRateLimitBufferRatio(double aiRateLimitBufferRatio) {
+        this.aiRateLimitBufferRatio = aiRateLimitBufferRatio;
+    }
+
+    public String getAiRateLimitStrategy() {
+        return aiRateLimitStrategy;
+    }
+
+    public void setAiRateLimitStrategy(String aiRateLimitStrategy) {
+        this.aiRateLimitStrategy = aiRateLimitStrategy;
+    }
+
     /**
      * 重置為預設配置
      */
@@ -147,6 +185,10 @@ public class PluginConfiguration {
         this.aiAnalysisEnabled = true;
         this.aiModel = "gpt-4";
         this.aiTimeout = 30000;
+        this.aiRateLimitEnabled = true;
+        this.aiMaxTokensPerMinute = 30000;
+        this.aiRateLimitBufferRatio = 0.9;
+        this.aiRateLimitStrategy = "adaptive";
         this.cacheEnabled = true;
         this.cacheMaxSize = 1000L;
         this.cacheTtlHours = 24L;
